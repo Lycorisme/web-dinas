@@ -1,0 +1,236 @@
+/* ===== 0. Variabel Warna & Tema Global ===== */
+:root {
+    --primary-color: #4e73df; /* Biru yang modern */
+    --primary-hover: #2e59d9;
+    --light-gray: #f8f9fc;
+    --border-color: #e3e6f0;
+    --text-dark: #5a5c69;
+    --text-light: #858796;
+    --success-color: #1cc88a;
+    --card-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+}
+
+body {
+    background-color: var(--light-gray);
+}
+
+/* ===== 1. Perbaikan Desain Tabel & Header ===== */
+.card .table-responsive {
+    border: 1px solid var(--border-color);
+    border-radius: 0.35rem;
+}
+
+.table thead {
+    background-color: #f8f9fc; /* Warna abu-abu sangat muda */
+    border-bottom: 2px solid var(--primary-color);
+}
+
+.table thead th {
+    color: var(--text-dark);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    letter-spacing: 0.5px;
+    border-bottom: none !important;
+    vertical-align: middle;
+}
+
+.table tbody tr {
+    transition: background-color 0.2s ease-in-out;
+}
+
+.table-hover > tbody > tr:hover {
+    background-color: #e9ecef; /* Warna hover yang lebih jelas */
+}
+
+.table td, .table th {
+    padding: 0.9rem;
+    vertical-align: middle;
+}
+
+/* ===== 2. Kustomisasi Checkbox yang Lebih Modern ===== */
+/* Aturan umum untuk checkbox */
+.form-check-input {
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    background-color: #fff;
+    border: 1px solid var(--border-color);
+    width: 1.25em;
+    height: 1.25em;
+    border-radius: 0.25em;
+    transition: all 0.15s ease-in-out;
+    margin: 0;
+    position: static;
+    top: auto;
+    vertical-align: middle;
+    z-index: 1;
+}
+
+/* Container untuk checkbox - pastikan tidak menghalangi klik */
+.form-check {
+    padding-left: 0;
+    margin-bottom: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    position: relative;
+}
+
+/* Perbaikan khusus untuk checkbox di header tabel */
+.table thead th .form-check-input,
+.table thead th input[type="checkbox"],
+#selectAll {
+    position: static !important;
+    top: 0 !important;
+    left: 0 !important;
+    margin: 0 !important;
+    vertical-align: middle !important;
+    display: inline-block !important;
+    z-index: 2 !important;
+}
+
+/* Perbaikan khusus untuk checkbox di body tabel */
+.table tbody td .form-check-input,
+.table tbody td input[type="checkbox"] {
+    position: relative;
+    top: -2px;
+    margin: 0 4px 0 0;
+    z-index: 1;
+}
+
+/* Aturan untuk checkbox yang dicentang */
+.form-check-input:checked {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    /* SVG Checkmark untuk tampilan tajam di semua layar */
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3e%3cpath fill='none' stroke='%23fff' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='M6 10l3 3l6-6'/%3e%3c/svg%3e");
+}
+
+.form-check-input:focus {
+    box-shadow: 0 0 0 0.25rem rgba(78, 115, 223, 0.25);
+    border-color: var(--primary-color);
+}
+
+/* ===== 3. Desain Ulang Modal Loading ===== */
+.modal-content {
+    border: none;
+    border-radius: 0.5rem;
+    box-shadow: var(--card-shadow);
+}
+
+.modal-body .spinner-border {
+    width: 3rem;
+    height: 3rem;
+    color: var(--primary-color);
+}
+
+#loadingText {
+    font-size: 1.2rem;
+    font-weight: 500;
+    color: var(--text-dark);
+}
+
+#loadingDetail {
+    color: var(--text-light);
+}
+
+/* ===== 4. Polish & Konsistensi UI Lainnya ===== */
+.card {
+    border: 1px solid var(--border-color);
+    box-shadow: none; /* Gunakan shadow yang lebih halus */
+    transition: box-shadow 0.2s ease;
+}
+
+.card:hover {
+    box-shadow: var(--card-shadow);
+}
+
+.card-header {
+    background-color: #fff;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.card-header h4 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+.list-group-item-action:hover {
+    background-color: #f1f3f8;
+}
+
+/* Kustomisasi Scrollbar agar lebih elegan */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #b3b3b3;
+}
+
+/* Perbaikan tambahan untuk memastikan konsistensi */
+/* Reset khusus untuk checkbox di header tabel */
+.table thead th input[type="checkbox"] {
+    position: static !important;
+    top: 0 !important;
+    left: 0 !important;
+    margin: 0 !important;
+    vertical-align: middle !important;
+    z-index: 2 !important;
+}
+
+/* Perbaikan untuk sel tabel pertama (kolom checkbox) */
+.table thead th:first-child,
+.table tbody td:first-child {
+    text-align: center !important;
+    vertical-align: middle !important;
+}
+
+/* Memastikan checkbox dapat diklik */
+.form-check-input,
+.form-check .form-check-input {
+    pointer-events: auto !important;
+    cursor: pointer !important;
+}
+
+/* Pastikan container tidak menghalangi klik */
+.form-check {
+    pointer-events: none !important;
+}
+
+.form-check .form-check-input {
+    pointer-events: auto !important;
+}
+
+/* Perbaikan untuk memastikan checkbox terlihat dengan baik */
+.table thead th:first-child .form-check,
+.table tbody td:first-child .form-check {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Perbaikan untuk memastikan tidak ada overlay yang menghalangi */
+.table thead th:first-child,
+.table tbody td:first-child {
+    position: relative;
+    z-index: 1;
+}
+
+.table thead th:first-child .form-check-input,
+.table tbody td:first-child .form-check-input {
+    position: relative;
+    z-index: 2;
+}
