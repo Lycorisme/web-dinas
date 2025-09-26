@@ -1,3 +1,4 @@
+# C:\laragon\www\dapodik3\main_scraper.pyw
 import requests
 from bs4 import BeautifulSoup
 import time
@@ -14,13 +15,20 @@ import signal
 import atexit
 import argparse
 import traceback
+import random
+from urllib3.util.retry import Retry
+from requests.adapters import HTTPAdapter
 
 # --- Konfigurasi Awal ---
 project_root = os.path.abspath(os.path.dirname(__file__))
 sys.path.append(project_root)
 from helper.db_connector import get_db_connection
 
-JEDA_SAAT_GAGAL = 15
+# Konfigurasi yang ditingkatkan
+JEDA_SAAT_GAGAL = 10  # Dikurangi dari 15 detik
+JEDA_ANTAR_REQUEST = 2  # Jeda antara request untuk menghindari rate limiting
+MAX_RETRIES = 10  # Dikurangi dari 300 untuk menghindari loop tak terbatas
+REQUEST_TIMEOUT = 60  # Timeout ditingkatkan
 NAMA_HARI = {'Monday': 'Senin', 'Tuesday': 'Selasa', 'Wednesday': 'Rabu', 'Thursday': 'Kamis', 'Friday': 'Jumat', 'Saturday': 'Sabtu', 'Sunday': 'Minggu'}
 NAMA_BULAN = {1: 'Januari', 2: 'Februari', 3: 'Maret', 4: 'April', 5: 'Mei', 6: 'Juni', 7: 'Juli', 8: 'Agustus', 9: 'September', 10: 'Oktober', 11: 'November', 12: 'Desember'}
 
@@ -47,8 +55,35 @@ def cleanup():
             print("\nKoneksi database global ditutup.")
 
 # ================================================================
-# SECTION 1 & 2: FUNGSI DATABASE & SCRAPING
+# SECTION 1 & 2: FUNGSI DATABASE & SCRAPING - DIPERBAIKI
 # ================================================================
+
+def create_session_with_retry():
+    """Membuat session requests dengan retry strategy"""
+    session = requests.Session()
+    
+    # Retry strategy
+    retry_strategy = Retry(
+        total=3,
+        backoff_factor=1,
+        status_forcelist=[429, 500, 502, 503, 504],
+    )
+    
+    adapter = HTTPAdapter(max_retries=retry_strategy)
+    session.mount("http://", adapter)
+    session.mount("https://", adapter)
+    
+    # Headers yang lebih realistis
+    session.headers.update({
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Language': 'id-ID,id;q=0.9,en;q=0.8',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Connection': 'keep-alive',
+        'Upgrade-Insecure-Requests': '1',
+    })
+    
+    return session
 
 def get_task_details_from_log(log_id):
     """Mengambil detail tugas dari log database"""
@@ -159,17 +194,18 @@ def extract_sekolah_kita_data(html_content):
     try:
         soup = BeautifulSoup(html_content, 'html.parser')
         
-        # Extract kepala sekolah
+        # Extract kepala sekolah dengan pattern yang lebih robust
         kepsek_elements = soup.find_all('li', class_='list-group-item')
         for element in kepsek_elements:
             text = element.get_text(strip=True)
             if 'Kepala Sekolah' in text:
-                parts = text.split(':')
-                if len(parts) > 1:
-                    data['kepala_sekolah'] = parts[1].strip()
+                # Mencari teks setelah "Kepala Sekolah"
+                match = re.search(r'Kepala Sekolah\s*:?\s*(.+)', text, re.IGNORECASE)
+                if match:
+                    data['kepala_sekolah'] = match.group(1).strip()
                 break
 
-        # Extract operator
+        # Extract operator dengan pattern yang lebih robust
         for element in kepsek_elements:
             text = element.get_text(strip=True)
             if 'Operator' in text:
@@ -177,99 +213,214 @@ def extract_sekolah_kita_data(html_content):
                 if operator_link:
                     data['operator'] = operator_link.get_text(strip=True)
                 else:
-                    parts = text.split(':')
-                    if len(parts) > 1 and parts[1].strip():
-                        data['operator'] = parts[1].strip()
+                    match = re.search(r'Operator\s*:?\s*(.+)', text, re.IGNORECASE)
+                    if match:
+                        data['operator'] = match.group(1).strip()
                 break
 
-        # Extract koordinat dari script
+        # Extract koordinat dari script dengan pattern yang lebih luas
         scripts = soup.find_all('script')
         for script in scripts:
             if script.string:
-                # Pattern untuk marker Leaflet
-                match = re.search(r'var marker = L\.marker\(L\.latLng\(([^,]+),([^\)]+)\)', script.string)
-                if match:
-                    data['lintang'] = match.group(1).strip().replace("'", "").replace('"', '')
-                    data['bujur'] = match.group(2).strip().replace("'", "").replace('"', '')
-                    break
+                # Pattern untuk marker Leaflet yang lebih fleksibel
+                patterns = [
+                    r'var marker = L\.marker\(L\.latLng\(([^,]+),([^\)]+)\)',
+                    r'L\.marker\(\[([^,]+),([^\]]+)\]',
+                    r'latLng\(([^,]+),([^\)]+)\)'
+                ]
+                
+                for pattern in patterns:
+                    match = re.search(pattern, script.string)
+                    if match:
+                        data['lintang'] = match.group(1).strip().replace("'", "").replace('"', '').strip()
+                        data['bujur'] = match.group(2).strip().replace("'", "").replace('"', '').strip()
+                        if data['lintang'] and data['bujur']:
+                            return data
+                        break
     except Exception as e:
         print(f"  [ERROR PARSING] Gagal mem-parsing data Sekolah Kita: {e}")
     return data
 
+def validate_and_clean_filename(filename):
+    """Validasi dan bersihkan nama file dari karakter tidak valid"""
+    # Hapus karakter tidak valid untuk nama file
+    invalid_chars = '<>:"/\\|?*'
+    for char in invalid_chars:
+        filename = filename.replace(char, '')
+    
+    # Hapus spasi berlebih dan trim
+    filename = re.sub(r'\s+', ' ', filename).strip()
+    
+    # Batasi panjang nama file
+    if len(filename) > 200:
+        filename = filename[:200]
+    
+    return filename
+
 def unduh_dan_scrape_sekolah(url_data, batch_dir, log_id, lock, counters):
-    """Fungsi untuk mengunduh dan scraping data sekolah"""
+    """Fungsi untuk mengunduh dan scraping data sekolah - VERSI DIPERBAIKI"""
     global should_stop
     url_id, url_sekolah, description = url_data
     thread_name = threading.current_thread().name
+    
     print(f"[{thread_name}] Memulai: {description or url_sekolah}")
     
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-    }
-    
-    max_retries = 300
+    # Buat session untuk thread ini
+    session = create_session_with_retry()
+    max_retries = MAX_RETRIES
     retry_count = 0
     
     while not should_stop and retry_count < max_retries:
-        if check_log_status(log_id) == 'cancelled':
-            should_stop = True
-            return
-            
+        # Cek status log secara berkala
+        if retry_count % 3 == 0:  # Cek setiap 3 percobaan
+            log_status = check_log_status(log_id)
+            if log_status == 'cancelled':
+                should_stop = True
+                print(f"[{thread_name}] Proses dibatalkan melalui database")
+                return
+        
         try:
             print(f"[{thread_name}] Mengunduh profil dari {url_sekolah}...")
-            halaman_response = requests.get(url_sekolah, headers=headers, timeout=45)
+            
+            # Request halaman dengan timeout dan retry
+            halaman_response = session.get(url_sekolah, timeout=REQUEST_TIMEOUT)
             halaman_response.raise_for_status()
+            
+            # Cek apakah halaman valid
+            if len(halaman_response.text) < 1000:
+                raise ValueError("Halaman terlalu pendek, mungkin terjadi error")
+                
             soup = BeautifulSoup(halaman_response.text, 'html.parser')
 
-            # Cari link download Excel
-            link_element = soup.select_one('a[href*="/getExcel/getProfilSekolah"]')
+            # Cari link download Excel dengan berbagai pattern
+            link_element = None
+            selectors = [
+                'a[href*="/getExcel/getProfilSekolah"]',
+                'a[href*="getExcel"]',
+                'a[href*="profil"]',
+                'a:contains("Excel")',
+                'a:contains("Unduh")'
+            ]
+            
+            for selector in selectors:
+                try:
+                    if 'contains' in selector:
+                        # Manual text search
+                        text_to_find = selector.split('"')[1]
+                        for link in soup.find_all('a'):
+                            if text_to_find in link.get_text():
+                                link_element = link
+                                break
+                    else:
+                        link_element = soup.select_one(selector)
+                    if link_element:
+                        break
+                except Exception:
+                    continue
+
             if not link_element:
                 raise ValueError("Link unduh profil tidak ditemukan.")
 
-            # Cari nama sekolah
-            nama_sekolah_element = soup.select_one('h2.name')
+            # Cari nama sekolah dengan berbagai pattern
+            nama_sekolah_element = None
+            nama_selectors = [
+                'h2.name',
+                'h1',
+                'h2',
+                '.nama-sekolah',
+                '.school-name',
+                'title'
+            ]
+            
+            for selector in nama_selectors:
+                nama_sekolah_element = soup.select_one(selector)
+                if nama_sekolah_element and nama_sekolah_element.text.strip():
+                    break
+
             if not nama_sekolah_element:
                 raise ValueError("Nama sekolah tidak ditemukan.")
 
-            download_url = "https://dapo.kemendikdasmen.go.id" + link_element['href'].strip()
-            nama_sekolah = re.sub(r'[<>:"/\\|?*]', '', nama_sekolah_element.text.strip())
+            # Build download URL
+            href = link_element.get('href', '').strip()
+            if href.startswith('/'):
+                download_url = "https://dapo.kemendikdasmen.go.id" + href
+            elif href.startswith('http'):
+                download_url = href
+            else:
+                download_url = url_sekolah.rsplit('/', 1)[0] + '/' + href.lstrip('/')
             
-            excel_filename = f"profil_{nama_sekolah}.xlsx"
+            nama_sekolah = validate_and_clean_filename(nama_sekolah_element.text.strip())
+            
+            # Buat nama file yang unik
+            timestamp = int(time.time())
+            excel_filename = f"profil_{nama_sekolah}_{timestamp}.xlsx"
             excel_save_path = os.path.join(batch_dir, excel_filename)
 
-            # Download file Excel
+            # Download file Excel dengan retry
             print(f"[{thread_name}] Mengunduh file Excel...")
-            file_response = requests.get(download_url, headers=headers, timeout=90)
+            time.sleep(JEDA_ANTAR_REQUEST)  # Jeda sebelum download
+            
+            file_response = session.get(download_url, timeout=90, stream=True)
             file_response.raise_for_status()
             
+            # Simpan file dengan chunk untuk menghindari memory issue
             with open(excel_save_path, 'wb') as file:
-                file.write(file_response.content)
+                for chunk in file_response.iter_content(chunk_size=8192):
+                    if chunk:
+                        file.write(chunk)
             print(f"[{thread_name}] Berhasil mengunduh: {excel_filename}")
 
-            # Cari link 'Data Sekolah Kita'
+            # Cari link 'Data Sekolah Kita' dengan berbagai pattern
             print(f"[{thread_name}] Mencari link 'Data Sekolah Kita'...")
-            sekolah_kita_link_element = soup.select_one("a[title*='di Sekolah Kita']")
-            if not sekolah_kita_link_element:
-                # Fallback: cari link dengan text yang mengandung 'Sekolah Kita'
-                for link in soup.find_all('a'):
-                    if link.get_text() and 'Data Sekolah Kita' in link.get_text():
-                        sekolah_kita_link_element = link
-                        break
+            sekolah_kita_link_element = None
+            sekolah_kita_selectors = [
+                "a[title*='Sekolah Kita']",
+                "a[href*='sekolah.kemdikbud.go.id']",
+                "a:contains('Sekolah Kita')",
+                "a:contains('Data Sekolah')"
+            ]
             
-            if not sekolah_kita_link_element:
-                print(f"[{thread_name}] Warning: Link 'Data Sekolah Kita' tidak ditemukan, melanjutkan tanpa data tambahan.")
-                info_data = {'kepala_sekolah': None, 'operator': None, 'lintang': None, 'bujur': None}
+            for selector in sekolah_kita_selectors:
+                try:
+                    if 'contains' in selector:
+                        text_to_find = selector.split('"')[1]
+                        for link in soup.find_all('a'):
+                            if text_to_find in link.get_text():
+                                sekolah_kita_link_element = link
+                                break
+                    else:
+                        sekolah_kita_link_element = soup.select_one(selector)
+                    if sekolah_kita_link_element:
+                        break
+                except Exception:
+                    continue
+            
+            info_data = {'kepala_sekolah': None, 'operator': None, 'lintang': None, 'bujur': None}
+            
+            if sekolah_kita_link_element:
+                sekolah_kita_url = sekolah_kita_link_element.get('href', '')
+                if sekolah_kita_url:
+                    if not sekolah_kita_url.startswith('http'):
+                        # Build absolute URL
+                        if sekolah_kita_url.startswith('/'):
+                            sekolah_kita_url = "https://dapo.kemendikdasmen.go.id" + sekolah_kita_url
+                        else:
+                            sekolah_kita_url = url_sekolah.rsplit('/', 1)[0] + '/' + sekolah_kita_url.lstrip('/')
+                    
+                    print(f"[{thread_name}] Mengakses: {sekolah_kita_url}")
+                    time.sleep(JEDA_ANTAR_REQUEST)  # Jeda sebelum request berikutnya
+                    
+                    try:
+                        sekolah_kita_response = session.get(sekolah_kita_url, timeout=45)
+                        sekolah_kita_response.raise_for_status()
+                        info_data = extract_sekolah_kita_data(sekolah_kita_response.text)
+                    except Exception as e:
+                        print(f"[{thread_name}] Warning: Gagal akses Sekolah Kita: {e}")
             else:
-                sekolah_kita_url = sekolah_kita_link_element['href']
-                print(f"[{thread_name}] Mengakses: {sekolah_kita_url}")
-                time.sleep(1)
-                
-                sekolah_kita_response = requests.get(sekolah_kita_url, headers=headers, timeout=45)
-                sekolah_kita_response.raise_for_status()
-                info_data = extract_sekolah_kita_data(sekolah_kita_response.text)
+                print(f"[{thread_name}] Warning: Link 'Data Sekolah Kita' tidak ditemukan")
 
             # Simpan info data ke JSON
-            info_json_filename = f"info_{nama_sekolah}.json"
+            info_json_filename = f"info_{nama_sekolah}_{timestamp}.json"
             info_json_save_path = os.path.join(batch_dir, info_json_filename)
             with open(info_json_save_path, 'w', encoding='utf-8') as f:
                 json.dump(info_data, f, ensure_ascii=False, indent=2)
@@ -285,33 +436,59 @@ def unduh_dan_scrape_sekolah(url_data, batch_dir, log_id, lock, counters):
             print(f"[{thread_name}] BERHASIL LENGKAP untuk: {nama_sekolah}")
             break  # Keluar dari retry loop jika berhasil
 
+        except requests.exceptions.RequestException as e:
+            retry_count += 1
+            error_msg = f"Network error: {e}"
+            print(f"[{thread_name}] GAGAL (percobaan ke-{retry_count}): {error_msg}")
+            
         except Exception as e:
             retry_count += 1
-            print(f"[{thread_name}] GAGAL (percobaan ke-{retry_count}): {e}")
+            error_msg = f"{type(e).__name__}: {e}"
+            print(f"[{thread_name}] GAGAL (percobaan ke-{retry_count}): {error_msg}")
+        
+        # Update failed counter
+        with lock:
+            counters['failed'] += 1
+            update_scraping_log(log_id, failed_count=counters['failed'])
+        
+        # Jika belum mencapai max retries, tunggu sebelum retry
+        if retry_count < max_retries and not should_stop:
+            wait_time = JEDA_SAAT_GAGAL + random.uniform(0, 5)  # Random delay untuk menghindari pattern
+            print(f"[{thread_name}] Mencoba lagi dalam {wait_time:.1f} detik...")
             
-            with lock:
-                counters['failed'] += 1
-                update_scraping_log(log_id, failed_count=counters['failed'])
-            
-            if retry_count < max_retries:
-                print(f"[{thread_name}] Mencoba lagi dalam {JEDA_SAAT_GAGAL} detik...")
-                for _ in range(JEDA_SAAT_GAGAL):
-                    if should_stop or check_log_status(log_id) == 'cancelled':
-                        should_stop = True
-                        return
-                    time.sleep(1)
-            else:
-                print(f"[{thread_name}] Gagal setelah {max_retries} percobaan untuk: {description or url_sekolah}")
+            # Wait dengan periodic check untuk cancellation
+            for i in range(int(wait_time * 10)):
+                if should_stop or check_log_status(log_id) == 'cancelled':
+                    should_stop = True
+                    return
+                time.sleep(0.1)
+        else:
+            print(f"[{thread_name}] Gagal setelah {max_retries} percobaan untuk: {description or url_sekolah}")
+            break
 
 def scrape_all_files(url_list, batch_dir, log_id):
-    """Scrape semua file dengan threading"""
+    """Scrape semua file dengan threading - VERSI DIPERBAIKI"""
     lock = threading.Lock()
     counters = {'processed': 0, 'success': 0, 'failed': 0, 'downloaded_files': []}
     threads = []
     
+    # Batasi jumlah thread bersamaan untuk menghindari overload
+    max_concurrent_threads = 3
+    current_threads = 0
+    
     for index, url_data in enumerate(url_list):
         if should_stop:
             break
+            
+        # Tunggu jika terlalu banyak thread aktif
+        while current_threads >= max_concurrent_threads and not should_stop:
+            time.sleep(1)
+            # Hitung thread yang masih aktif
+            current_threads = sum(1 for t in threads if t.is_alive())
+        
+        if should_stop:
+            break
+            
         thread = threading.Thread(
             target=unduh_dan_scrape_sekolah, 
             args=(url_data, batch_dir, log_id, lock, counters), 
@@ -319,6 +496,10 @@ def scrape_all_files(url_list, batch_dir, log_id):
         )
         threads.append(thread)
         thread.start()
+        current_threads += 1
+        
+        # Jeda kecil antara thread startup
+        time.sleep(0.5)
     
     # Wait for all threads to complete
     for thread in threads:
@@ -327,7 +508,7 @@ def scrape_all_files(url_list, batch_dir, log_id):
     return counters.get('downloaded_files', []), not should_stop
 
 # ================================================================
-# SECTION 3: FUNGSI KONVERSI
+# SECTION 3: FUNGSI KONVERSI - TETAP SAMA
 # ================================================================
 
 def convert_excel_to_json(downloaded_files):
@@ -369,7 +550,7 @@ def convert_excel_to_json(downloaded_files):
     return converted_files, not should_stop
 
 # ================================================================
-# SECTION 4: FUNGSI IMPORT DATABASE
+# SECTION 4: FUNGSI IMPORT DATABASE - TETAP SAMA
 # ================================================================
 
 def clean_text(text):
@@ -856,7 +1037,7 @@ def run_database_import(converted_files):
     return success_count == total_count and not should_stop
 
 # ================================================================
-# SECTION 5: HAPUS FILE
+# SECTION 5: HAPUS FILE - TETAP SAMA
 # ================================================================
 
 def hapus_file_sementara(excel_path, info_json_path, profile_json_path):
@@ -870,11 +1051,11 @@ def hapus_file_sementara(excel_path, info_json_path, profile_json_path):
         print(f"  [CLEANUP WARNING] Gagal menghapus file: {e}")
 
 # ================================================================
-# SECTION 6: FUNGSI UTAMA
+# SECTION 6: FUNGSI UTAMA - DIPERBAIKI
 # ================================================================
 
 def main():
-    """Fungsi utama scraper"""
+    """Fungsi utama scraper - VERSI DIPERBAIKI"""
     global log_id
     parser = argparse.ArgumentParser(description="Scraper data sekolah Dapodik.")
     parser.add_argument('--log_id', type=int, required=True, help='ID log proses dari database')
@@ -899,10 +1080,22 @@ def main():
 
         print(f"\n--- TAHAP 1 & 2: SCRAPING DATA SEKOLAH ---")
         print(f"Total URL untuk diproses: {len(url_list)}")
+        print(f"Folder penyimpanan: {batch_dir}")
         
-        # 3. Proses scraping
+        # 3. Proses scraping dengan improved error handling
         downloaded_files, success_scrape = scrape_all_files(url_list, batch_dir, log_id)
-        if not success_scrape and not should_stop:
+        
+        if should_stop:
+            print("\nProses dihentikan oleh pengguna.")
+            update_scraping_log(
+                log_id, 
+                status='cancelled', 
+                completed_at=datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                error_message="Proses dibatalkan oleh pengguna"
+            )
+            return
+            
+        if not success_scrape:
             raise Exception("Proses scraping dihentikan atau gagal total.")
         
         print(f"\n--- TAHAP 3: KONVERSI EXCEL KE JSON ---")
@@ -910,7 +1103,18 @@ def main():
         
         # 4. Konversi Excel ke JSON
         converted_files, success_convert = convert_excel_to_json(downloaded_files)
-        if not success_convert and not should_stop:
+        
+        if should_stop:
+            print("\nProses dihentikan oleh pengguna selama konversi.")
+            update_scraping_log(
+                log_id, 
+                status='cancelled', 
+                completed_at=datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                error_message="Proses dibatalkan oleh pengguna selama konversi"
+            )
+            return
+            
+        if not success_convert:
             raise Exception("Proses konversi dihentikan.")
 
         print(f"\n--- TAHAP 4 & 5: IMPORT DATABASE & CLEANUP ---")
@@ -918,20 +1122,30 @@ def main():
         
         # 5. Import ke database
         success_import = run_database_import(converted_files)
-        if not success_import and not should_stop:
-            raise Exception("Proses import memiliki kegagalan.")
-            
-        if not should_stop:
+        
+        if should_stop:
+            print("\nProses dihentikan oleh pengguna selama import.")
             update_scraping_log(
                 log_id, 
-                status='completed', 
-                completed_at=datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                status='cancelled', 
+                completed_at=datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                error_message="Proses dibatalkan oleh pengguna selama import"
             )
-            print("\n==============================================")
-            print("SEMUA PROSES BERHASIL DISELESAIKAN!")
-            print("==============================================")
-        else:
-            raise Exception("Proses dihentikan oleh pengguna.")
+            return
+            
+        if not success_import:
+            print("Beberapa data gagal diimpor, tetapi proses tetap dilanjutkan.")
+            
+        # Update status final
+        update_scraping_log(
+            log_id, 
+            status='completed', 
+            completed_at=datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        )
+        
+        print("\n==============================================")
+        print("SEMUA PROSES BERHASIL DISELESAIKAN!")
+        print("==============================================")
 
     except Exception as e:
         print(f"\n[ERROR FATAL] Proses dihentikan: {e}")

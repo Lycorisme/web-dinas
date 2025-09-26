@@ -1,7 +1,7 @@
 </div>
 <footer class="main-footer">
   <div class="footer-left">
-    Copyright &copy; 2025 Dapodik</a>
+    Copyright &copy; Dapodik 2025. All rights reserved.</a>
   </div>
   <div class="footer-right">
 

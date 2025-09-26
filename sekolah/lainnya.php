@@ -11,6 +11,8 @@ ORDER BY s.nama_sekolah");
 <section class="section">
     <div class="section-header d-flex justify-content-between align-items-center">
         <h1>Data Lainnya Sekolah</h1>
+    </div>
+    <div class="d-flex justify-content-end mb-3">
         <a href="./lainnya_create.php" class="btn btn-primary">
             <i class="fas fa-plus mr-2"></i>Tambah Data
         </a>

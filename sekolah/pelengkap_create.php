@@ -118,7 +118,7 @@ $sekolah = mysqli_query($connection, "SELECT npsn, nama_sekolah FROM sekolah_ide
             
             <div class="form-group">
               <input class="btn btn-primary" type="submit" name="proses" value="Simpan">
-              <input class="btn btn-danger" type="reset" name="batal" value="Bersihkan">
+              <a href="./kontak.php" class="btn btn-danger">batal</a>
             </div>
           </form>
         </div>

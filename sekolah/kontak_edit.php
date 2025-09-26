@@ -13,7 +13,6 @@ $sekolah = mysqli_query($connection, "SELECT npsn, nama_sekolah FROM sekolah_ide
 <section class="section">
   <div class="section-header d-flex justify-content-between">
     <h1>Ubah Kontak Sekolah</h1>
-    <a href="./kontak.php" class="btn btn-light">Kembali</a>
   </div>
   <div class="row">
     <div class="col-12">

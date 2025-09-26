@@ -10,7 +10,11 @@ isLogin();
 <head>
   <meta charset="UTF-8">
   <meta content="width=device-width, initial-scale=1, maximum-scale=1, shrink-to-fit=no" name="viewport">
-  <title>Dashboard &mdash; Dapodik</title>
+  <title>BTIKP &mdash; Dapodik</title>
+  <!-- Favicon SVG (utama) -->
+  <link rel="icon" type="image/svg+xml" href="../assets/img/favicon.svg">
+  <!-- Fallback PNG untuk browser lama / tools yang tidak mendukung SVG -->
+  <link rel="alternate icon" href="../assets/img/logo.png" type="image/png">
 
   <!-- General CSS Files -->
   <link rel="stylesheet" href="../assets/vendor/bootstrap/css/bootstrap.min.css">

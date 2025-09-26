@@ -11,6 +11,8 @@ ORDER BY s.nama_sekolah");
 <section class="section">
     <div class="section-header d-flex justify-content-between align-items-center">
         <h1>Data Pelengkap Sekolah</h1>
+    </div>
+    <div class="d-flex justify-content-end mb-3">
         <a href="./pelengkap_create.php" class="btn btn-primary">
             <i class="fas fa-plus mr-2"></i>Tambah Data
         </a>
@@ -232,20 +234,6 @@ $(document).ready(function() {
             $(this).find('.badge').removeClass('shadow-sm');
         }
     );
-
-    // Format NPWP and Rekening display
-    $('.font-monospace').each(function() {
-        let text = $(this).text().trim();
-        if (text !== '-' && text !== '') {
-            // Add spacing for better readability
-            if (text.length > 10) {
-                let formatted = text.replace(/(\d{2})(\d{3})(\d{3})(\d{1})(\d{3})(\d{3})/g, '$1.$2.$3.$4-$5.$6');
-                if (formatted !== text) {
-                    $(this).html(formatted);
-                }
-            }
-        }
-    });
 
     // Add loading animation for buttons
     $('.btn:not(.btn-danger)').on('click', function(e) {

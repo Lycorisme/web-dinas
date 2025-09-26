@@ -40,7 +40,6 @@ $result = mysqli_query($connection, "SELECT p.*, n.nama_negara
                                 <thead>
                                     <tr>
                                         <th style="min-width: 80px;">No</th>
-                                        <th style="min-width: 100px;">ID Provinsi</th>
                                         <th style="min-width: 200px;">Nama Provinsi</th>
                                         <th style="min-width: 150px;">Negara</th>
                                     </tr>
@@ -52,9 +51,6 @@ $result = mysqli_query($connection, "SELECT p.*, n.nama_negara
                                     ?>
                                         <tr>
                                             <td class="text-center"><?= $no++ ?></td>
-                                            <td title="ID Provinsi: <?= $data['id_provinsi'] ?>">
-                                                <span class="badge badge-primary"><?= htmlspecialchars($data['id_provinsi']) ?></span>
-                                            </td>
                                             <td title="<?= htmlspecialchars($data['nama_provinsi']) ?>" class="school-name">
                                                 <strong><?= htmlspecialchars($data['nama_provinsi']) ?></strong>
                                             </td>
@@ -189,7 +185,7 @@ $(document).ready(function() {
         },
         pageLength: 10,
         lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "Semua"]],
-        order: [[2, 'asc']], // Default sort by nama provinsi
+        order: [[1, 'asc']], // Default sort by nama provinsi
         dom: '<"top"Blf>rt<"bottom"ip><"clear">',
         buttons: [
             {

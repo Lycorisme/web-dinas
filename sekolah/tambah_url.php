@@ -19,6 +19,8 @@ $kecamatan_query = mysqli_query($connection, "SELECT id, nama_kecamatan, kabupat
 <section class="section">
     <div class="section-header d-flex flex-wrap justify-content-between align-items-center">
         <h1 class="mb-2 mb-md-0"><i class="fas fa-link"></i> Upload URL</h1>
+    </div>
+    <div class="d-flex justify-content-end mb-3">
         <a href="./index.php" class="btn btn-light">
             <i class="fas fa-arrow-left"></i> <span class="d-none d-sm-inline">Kembali</span>
         </a>
@@ -78,6 +80,7 @@ $kecamatan_query = mysqli_query($connection, "SELECT id, nama_kecamatan, kabupat
                                 <select class="form-select" id="kabupatenFilter">
                                     <option value="">Semua Kabupaten</option>
                                     <?php 
+                                    mysqli_data_seek($kabupaten_query, 0); // Reset pointer query
                                     while ($kab = mysqli_fetch_array($kabupaten_query)) : 
                                     ?>
                                         <option value="<?= $kab['id'] ?>"><?= htmlspecialchars($kab['nama_kabupaten']) ?></option>
@@ -148,12 +151,12 @@ $kecamatan_query = mysqli_query($connection, "SELECT id, nama_kecamatan, kabupat
                                 <span class="d-none d-sm-inline">Import Sekolah Terpilih</span>
                                 <span class="d-sm-none">Import</span>
                             </button>
+                            <button class="btn btn-danger btn-sm btn-md-normal" id="batalBtn" disabled>
+                                <i class="fas fa-times-circle me-1"></i> 
+                                <span class="d-none d-sm-inline">Batalkan Proses</span>
+                                <span class="d-sm-none">Batal</span>
+                            </button>
                         </div>
-                        <button class="btn btn-danger btn-sm btn-md-normal" id="batalBtn" disabled>
-                            <i class="fas fa-times-circle me-1"></i> 
-                            <span class="d-none d-sm-inline">Batalkan Proses</span>
-                            <span class="d-sm-none">Batal</span>
-                        </button>
                     </div>
                 </div>
             </div>
@@ -464,17 +467,20 @@ document.addEventListener('DOMContentLoaded', function() {
                     currentUrlIndukId = data.url_induk_id;
                     iziToast.success({
                         title: 'Sukses',
-                        message: 'URL induk berhasil disimpan.',
+                        message: 'URL induk berhasil disimpan. Memulai scraping data kabupaten...',
                         position: 'topCenter',
                         backgroundColor: '#1cc88a',
                         progressBarColor: '#0f6848'
                     });
                     
-                    // Auto-scrape kabupaten jika diperlukan
-                    const currentFilter = document.getElementById('filterData').value;
-                    if (currentFilter) {
-                        loadTableData(currentFilter, true);
-                    }
+                    // Set filter data ke kabupaten
+                    document.getElementById('filterData').value = 'kabupaten';
+                    currentDataType = 'kabupaten';
+                    
+                    // Jalankan scraping data kabupaten
+                    setTimeout(() => {
+                        triggerScraper('kabupaten');
+                    }, 1000);
                 } else {
                     iziToast.error({
                         title: 'Error',
@@ -537,7 +543,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // **PERBAIKAN UTAMA**: Event listener untuk filter data
+    // Event listener untuk filter data
     const filterData = document.getElementById('filterData');
     if(filterData) {
         filterData.addEventListener('change', function() {
@@ -553,16 +559,16 @@ document.addEventListener('DOMContentLoaded', function() {
             const kabFilterContainer = document.getElementById('kabupatenFilterContainer');
             const kecFilterContainer = document.getElementById('kecamatanFilterContainer');
             
-            // **FIX**: Logika filter yang diperbaiki
+            // Logika filter
             if (currentDataType === 'kecamatan') {
                 filtersContainer.style.display = 'block';
                 kabFilterContainer.style.display = 'block';
-                kecFilterContainer.style.display = 'none'; // Tidak tampil untuk kecamatan
+                kecFilterContainer.style.display = 'none';
             } else if (currentDataType === 'sekolah') {
                 filtersContainer.style.display = 'block';
-                kabFilterContainer.style.display = 'none'; // Tidak tampil untuk sekolah
+                kabFilterContainer.style.display = 'none';
                 kecFilterContainer.style.display = 'block';
-                updateKecamatanFilterOptions(); // Reset ke semua kecamatan
+                updateKecamatanFilterOptions();
             } else {
                 filtersContainer.style.display = 'none';
                 kabFilterContainer.style.display = 'none';
@@ -589,7 +595,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // **PERBAIKAN**: Fungsi untuk mengupdate opsi filter kecamatan (untuk level sekolah saja)
+    // Fungsi untuk mengupdate opsi filter kecamatan
     function updateKecamatanFilterOptions() {
         const kecamatanSelect = document.getElementById('kecamatanFilter');
         const currentKecValue = kecamatanSelect.value;
@@ -597,7 +603,6 @@ document.addEventListener('DOMContentLoaded', function() {
         kecamatanSelect.innerHTML = '';
         kecamatanSelect.add(new Option('Semua Kecamatan', ''));
 
-        // Tampilkan semua kecamatan untuk level sekolah
         allKecamatanOptions.forEach(option => {
             if (option.value === '') return;
             kecamatanSelect.add(new Option(option.text, option.value));
@@ -609,26 +614,24 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Event listener untuk filter kabupaten (untuk level kecamatan)
+    // Event listener untuk filter kabupaten
     const kabupatenFilter = document.getElementById('kabupatenFilter');
     if(kabupatenFilter) {
         kabupatenFilter.addEventListener('change', function() {
             selectedKabupatenId = this.value;
             
-            // Hanya berlaku untuk level kecamatan
             if (currentDataType === 'kecamatan') {
                 loadTableData(currentDataType);
             }
         });
     }
     
-    // Event listener untuk filter kecamatan (untuk level sekolah)
+    // Event listener untuk filter kecamatan
     const kecamatanFilter = document.getElementById('kecamatanFilter');
     if(kecamatanFilter) {
         kecamatanFilter.addEventListener('change', function() {
             selectedKecamatanId = this.value;
             
-            // Hanya berlaku untuk level sekolah
             if (currentDataType === 'sekolah') {
                 loadTableData('sekolah');
             }
@@ -658,14 +661,12 @@ document.addEventListener('DOMContentLoaded', function() {
             </tr>
         `;
         
-        // Build request data berdasarkan level dan filter yang aktif
         const requestData = {
             action: 'check_data', 
             data_type: dataType, 
             url_induk_id: currentUrlIndukId
         };
         
-        // Tambahkan filter yang sesuai berdasarkan level data
         if (dataType === 'kecamatan' && selectedKabupatenId) {
             requestData.kabupaten_id = selectedKabupatenId;
         }
@@ -715,12 +716,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // Function untuk upload URLs manual
     function uploadUrls(urls, index) {
         if (index >= urls.length) {
-            // Semua URL berhasil diupload
             document.getElementById('uploadProgress').style.display = 'none';
             document.getElementById('submitBtn').disabled = false;
             document.getElementById('urlForm').reset();
             
-            // Reset counter dan hapus field tambahan
             urlCounter = 1;
             const urlContainer = document.getElementById('urlContainer');
             urlContainer.innerHTML = `
@@ -751,7 +750,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const url = urls[index];
         const progress = Math.round(((index + 1) / urls.length) * 100);
         
-        // Update progress
         document.getElementById('uploadProgressBar').style.width = progress + '%';
         document.getElementById('uploadStatusText').textContent = `Upload ${index + 1}/${urls.length}: ${url.description || url.url}`;
         
@@ -763,7 +761,6 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                // Lanjut ke URL berikutnya
                 setTimeout(() => uploadUrls(urls, index + 1), 500);
             } else {
                 document.getElementById('uploadProgress').style.display = 'none';
@@ -853,8 +850,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
-            // Panggil triggerScraper dengan ID yang dipilih
-            triggerScraper(nextScraperType, selectedIds);
+            // PERBAIKAN: Untuk scraping kecamatan, kirim kabupaten_id yang dipilih
+            if (nextScraperType === 'kecamatan' && currentDataType === 'kabupaten') {
+                // Kirim hanya satu ID kabupaten pertama yang dipilih
+                triggerScraperForKecamatan(selectedIds[0]);
+            } else {
+                triggerScraper(nextScraperType, selectedIds);
+            }
         });
     }
     
@@ -935,7 +937,6 @@ document.addEventListener('DOMContentLoaded', function() {
     
     function triggerScraper(scraperType, selectedIds = []) {
         showLoadingModal(`Memulai Proses Scraping`, `Mengambil data ${scraperType}...`);
-        // Tampilkan progress bar
         document.getElementById('progressContainer').style.display = 'block';
         updateImportProgress(0, `Memulai scraping ${scraperType}...`);
         document.getElementById('batalBtn').disabled = false;
@@ -958,6 +959,49 @@ document.addEventListener('DOMContentLoaded', function() {
                 hideLoadingModal();
                 iziToast.error({title: 'Error', message: data.message || `Gagal memulai scraping ${scraperType}.`, backgroundColor: '#e74a3b', progressBarColor: '#a02622'});
                 updateImportProgress(0, 'Error: ' + (data.message || `Scraping ${scraperType} gagal.`));
+                document.getElementById('batalBtn').disabled = true;
+                setTimeout(() => { document.getElementById('progressContainer').style.display = 'none'; }, 3000);
+            }
+        })
+        .catch(error => {
+            hideLoadingModal();
+            updateImportProgress(0, 'Error: ' + error.message);
+            document.getElementById('batalBtn').disabled = true;
+            setTimeout(() => { document.getElementById('progressContainer').style.display = 'none'; }, 3000);
+        });
+    }
+    
+    // PERBAIKAN: Fungsi baru khusus untuk scraping kecamatan
+    function triggerScraperForKecamatan(kabupatenId) {
+        showLoadingModal('Memulai Proses Scraping Kecamatan', 'Mengambil data kecamatan dari kabupaten terpilih...');
+        document.getElementById('progressContainer').style.display = 'block';
+        updateImportProgress(0, 'Memulai scraping kecamatan...');
+        document.getElementById('batalBtn').disabled = false;
+        
+        // PERBAIKAN: Kirim kabupaten_id sebagai parameter khusus
+        fetch('import_handler.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                action: 'trigger_scraper', 
+                scraper_type: 'kecamatan', 
+                url_induk_id: currentUrlIndukId, 
+                kabupaten_id: kabupatenId // PERBAIKAN: Kirim kabupaten_id tunggal
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                monitorProgress('kecamatan', 'Proses scraping kecamatan selesai.');
+            } else {
+                hideLoadingModal();
+                iziToast.error({
+                    title: 'Error', 
+                    message: data.message || 'Gagal memulai scraping kecamatan.', 
+                    backgroundColor: '#e74a3b', 
+                    progressBarColor: '#a02622'
+                });
+                updateImportProgress(0, 'Error: ' + (data.message || 'Scraping kecamatan gagal.'));
                 document.getElementById('batalBtn').disabled = true;
                 setTimeout(() => { document.getElementById('progressContainer').style.display = 'none'; }, 3000);
             }
@@ -1028,7 +1072,6 @@ document.addEventListener('DOMContentLoaded', function() {
                             if (processType === 'transfer') {
                                 setTimeout(() => window.location.reload(), 2000);
                             } else {
-                                // Refresh data according to the current view
                                 const currentFilter = document.getElementById('filterData').value;
                                 if (currentFilter) {
                                    loadTableData(currentFilter);

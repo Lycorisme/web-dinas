@@ -15,9 +15,6 @@ $existing_url = mysqli_num_rows($url_query) > 0 ? mysqli_fetch_array($url_query)
 <section class="section">
     <div class="section-header d-flex justify-content-between align-items-center">
         <h1>Ubah Data Sekolah</h1>
-        <a href="./index.php" class="btn btn-light">
-            <i class="fas fa-arrow-left"></i> Kembali
-        </a>
     </div>
     <div class="row">
         <div class="col-12">

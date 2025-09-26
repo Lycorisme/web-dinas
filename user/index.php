@@ -2,21 +2,21 @@
 require_once '../layout/_top.php';
 require_once '../helper/connection.php';
 
-$result = mysqli_query($connection, "SELECT k.*, s.nama_sekolah, s.npsn
-FROM sekolah_kontak k
-LEFT JOIN sekolah_identitas s ON k.npsn_fk = s.npsn
-ORDER BY s.nama_sekolah");
+// Query untuk mendapatkan data user
+$query = "SELECT * FROM login ORDER BY id DESC";
+$users = mysqli_query($connection, $query);
 ?>
 
 <section class="section">
     <div class="section-header d-flex justify-content-between align-items-center">
-        <h1>Kontak Sekolah</h1>
+        <h1>User Management</h1>
+        <div class="d-flex align-items-center">
+            <a href="tambah.php" class="btn btn-primary">
+                <i class="fas fa-plus mr-2"></i>Tambah User
+            </a>
+        </div>
     </div>
-    <div class="d-flex justify-content-end mb-3">
-        <a href="./kontak_create.php" class="btn btn-primary">
-            <i class="fas fa-plus mr-2"></i>Tambah Data
-        </a>
-    </div>
+    
     <div class="row">
         <div class="col-12">
             <div class="card">
@@ -44,83 +44,58 @@ ORDER BY s.nama_sekolah");
                             <table class="table table-hover table-striped w-100" id="table-1">
                                 <thead>
                                     <tr>
-                                        <th style="min-width: 100px;">NPSN</th>
-                                        <th style="min-width: 200px;">Nama Sekolah</th>
-                                        <th style="min-width: 120px;">Telepon</th>
-                                        <th style="min-width: 120px;">Fax</th>
-                                        <th style="min-width: 180px;">Email</th>
-                                        <th style="min-width: 180px;">Website</th>
-                                        <th class="text-center not-export" style="min-width: 120px;">Aksi</th>
+                                        <th style="min-width: 50px;">ID</th>
+                                        <th style="min-width: 200px;">Username</th>
+                                        <th style="min-width: 250px;">Nama Pengguna</th>
+                                        <th style="min-width: 120px;">Role</th>
+                                        <th class="text-center not-export" style="min-width: 150px;">Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <?php
-                                    while ($data = mysqli_fetch_array($result)) :
-                                    ?>
+                                    <?php while($user = mysqli_fetch_array($users)) { ?>
                                         <tr>
-                                            <td title="NPSN: <?= $data['npsn_fk'] ?>">
-                                                <span class="badge badge-primary"><?= htmlspecialchars($data['npsn_fk']) ?></span>
+                                            <td title="ID: <?= $user['id'] ?>">
+                                                <span class="badge badge-light"><?= $user['id'] ?></span>
                                             </td>
-                                            <td title="<?= htmlspecialchars($data['nama_sekolah']) ?>" class="school-name">
-                                                <strong><?= htmlspecialchars($data['nama_sekolah']) ?></strong>
+                                            <td title="Username: <?= $user['username'] ?>">
+                                                <div class="d-flex align-items-center">
+                                                    <i class="fas fa-user-circle text-primary mr-2"></i>
+                                                    <strong><?= $user['username'] ?></strong>
+                                                </div>
                                             </td>
-                                            <td title="Telepon: <?= $data['nomor_telepon'] ? $data['nomor_telepon'] : 'Tidak ada' ?>">
-                                                <?php if ($data['nomor_telepon']) : ?>
-                                                    <div class="d-flex align-items-center">
-                                                        <i class="fas fa-phone text-success mr-2"></i>
-                                                        <span><?= htmlspecialchars($data['nomor_telepon']) ?></span>
-                                                    </div>
-                                                <?php else : ?>
-                                                    <span class="text-muted font-italic">Belum ada data</span>
-                                                <?php endif; ?>
+                                            <td title="Nama Pengguna: <?= $user['nama_pengguna'] ?>">
+                                                <div class="d-flex align-items-center">
+                                                    <i class="fas fa-id-badge text-info mr-2"></i>
+                                                    <span><?= $user['nama_pengguna'] ?></span>
+                                                </div>
                                             </td>
-                                            <td title="Fax: <?= $data['nomor_fax'] ? $data['nomor_fax'] : 'Tidak ada' ?>">
-                                                <?php if ($data['nomor_fax']) : ?>
-                                                    <div class="d-flex align-items-center">
-                                                        <i class="fas fa-fax text-info mr-2"></i>
-                                                        <span><?= htmlspecialchars($data['nomor_fax']) ?></span>
-                                                    </div>
-                                                <?php else : ?>
-                                                    <span class="text-muted font-italic">Belum ada data</span>
-                                                <?php endif; ?>
-                                            </td>
-                                            <td title="Email: <?= $data['email'] ? $data['email'] : 'Tidak ada' ?>">
-                                                <?php if ($data['email']) : ?>
-                                                    <div class="d-flex align-items-center">
-                                                        <i class="fas fa-envelope text-danger mr-2"></i>
-                                                        <a href="mailto:<?= htmlspecialchars($data['email']) ?>" class="text-decoration-none"><?= htmlspecialchars($data['email']) ?></a>
-                                                    </div>
-                                                <?php else : ?>
-                                                    <span class="text-muted font-italic">Belum ada data</span>
-                                                <?php endif; ?>
-                                            </td>
-                                            <td title="Website: <?= $data['website'] ? $data['website'] : 'Tidak ada' ?>">
-                                                <?php if ($data['website']) : ?>
-                                                    <div class="d-flex align-items-center">
-                                                        <i class="fas fa-globe text-primary mr-2"></i>
-                                                        <a href="<?= htmlspecialchars($data['website']) ?>" target="_blank" rel="noopener" class="text-decoration-none"><?= htmlspecialchars($data['website']) ?></a>
-                                                    </div>
-                                                <?php else : ?>
-                                                    <span class="text-muted font-italic">Belum ada data</span>
-                                                <?php endif; ?>
+                                            <td class="text-center">
+                                                <span class="badge badge-primary badge-pill px-3 py-2">
+                                                    <i class="fas fa-user-shield mr-1"></i>
+                                                    Admin
+                                                </span>
                                             </td>
                                             <td class="text-center">
                                                 <div class="btn-group btn-group-sm" role="group">
-                                                    <a class="btn btn-info" href="kontak_edit.php?id=<?= $data['id'] ?>"
+                                                    <a class="btn btn-info" href="edit.php?id=<?= $user['id'] ?>"
                                                        title="Edit Data" data-toggle="tooltip" data-placement="top">
                                                         <i class="fas fa-edit fa-fw"></i>
                                                     </a>
-                                                    <a class="btn btn-danger" href="kontak_delete.php?id=<?= $data['id'] ?>"
-                                                       onclick="return confirm('Yakin ingin menghapus data kontak untuk <?= htmlspecialchars($data['nama_sekolah']) ?>?')"
-                                                       title="Hapus Data" data-toggle="tooltip" data-placement="top">
-                                                        <i class="fas fa-trash fa-fw"></i>
-                                                    </a>
+                                                    <?php if ($user['id'] != 1) { ?>
+                                                        <a class="btn btn-danger" href="hapus.php?id=<?= $user['id'] ?>"
+                                                           onclick="return confirm('Yakin ingin menghapus user <?= htmlspecialchars($user['nama_pengguna']) ?>?')"
+                                                           title="Hapus Data" data-toggle="tooltip" data-placement="top">
+                                                            <i class="fas fa-trash fa-fw"></i>
+                                                        </a>
+                                                    <?php } else { ?>
+                                                        <button class="btn btn-danger" disabled title="User default tidak dapat dihapus" data-toggle="tooltip" data-placement="top">
+                                                            <i class="fas fa-trash fa-fw"></i>
+                                                        </button>
+                                                    <?php } ?>
                                                 </div>
                                             </td>
                                         </tr>
-                                    <?php
-                                    endwhile;
-                                    ?>
+                                    <?php } ?>
                                 </tbody>
                             </table>
                         </div>
@@ -211,41 +186,15 @@ $(document).ready(function() {
         }
     );
 
-    // Add loading animation for buttons
-    $('.btn:not(.btn-danger)').on('click', function(e) {
-        let $this = $(this);
-        let originalHtml = $this.html();
-        $this.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
-
-        // Re-enable button after short delay (in case of navigation)
-        setTimeout(() => {
-            $this.prop('disabled', false).html(originalHtml);
-        }, 2000);
-    });
-
     // Enhanced search functionality
-    $('#table-1_filter input').attr('placeholder', 'Cari berdasarkan nama sekolah, telepon, atau email...');
-
-    // Add custom search for badges
-    $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
-        let searchTerm = $('#table-1_filter input').val().toLowerCase();
-        if (!searchTerm) return true;
-
-        // Search in all visible columns
-        for (let i = 0; i < data.length - 1; i++) { // -1 to exclude action column
-            if (data[i].toLowerCase().indexOf(searchTerm) !== -1) {
-                return true;
-            }
-        }
-        return false;
-    });
+    $('#table-1_filter input').attr('placeholder', 'Cari berdasarkan username atau nama pengguna...');
 
     // Add keyboard shortcuts
     $(document).keydown(function(e) {
         // Ctrl + N for new data
         if (e.ctrlKey && e.keyCode === 78) {
             e.preventDefault();
-            window.location.href = './kontak_create.php';
+            window.location.href = './tambah.php';
         }
         // Ctrl + F for focus search
         if (e.ctrlKey && e.keyCode === 70) {
@@ -280,7 +229,7 @@ $(document).ready(function() {
                 targets: [-1] // Kolom aksi di tengah
             }
         ],
-        order: [[1, 'asc']], // Default sort by nama sekolah
+        order: [[2, 'asc']], // Default sort by nama pengguna
         dom: '<"top"Blf>rt<"bottom"ip><"clear">',
         buttons: [
             {
@@ -298,7 +247,7 @@ $(document).ready(function() {
                 exportOptions: {
                     columns: ':visible:not(.not-export)'
                 },
-                title: 'Data Kontak Sekolah - ' + new Date().toLocaleDateString('id-ID')
+                title: 'Data User Administrator - ' + new Date().toLocaleDateString('id-ID')
             },
             {
                 extend: 'pdf',
@@ -309,7 +258,7 @@ $(document).ready(function() {
                 },
                 orientation: 'landscape',
                 pageSize: 'A4',
-                title: 'Data Kontak Sekolah - ' + new Date().toLocaleDateString('id-ID')
+                title: 'Data User Administrator - ' + new Date().toLocaleDateString('id-ID')
             },
             {
                 extend: 'print',
@@ -318,7 +267,7 @@ $(document).ready(function() {
                 exportOptions: {
                     columns: ':visible:not(.not-export)'
                 },
-                title: 'Data Kontak Sekolah - ' + new Date().toLocaleDateString('id-ID')
+                title: 'Data User Administrator - ' + new Date().toLocaleDateString('id-ID')
             },
             {
                 extend: 'colvis',
@@ -337,7 +286,7 @@ $(document).ready(function() {
                 moveDataTableElements();
                 
                 // Tambahkan class ke elemen
-                $('.dataTables_filter input').addClass('form-control').attr('placeholder', 'Cari data kontak sekolah...');
+                $('.dataTables_filter input').addClass('form-control').attr('placeholder', 'Cari data user...');
                 $('.dataTables_length select').addClass('form-control');
                 
                 // Custom styling untuk pagination

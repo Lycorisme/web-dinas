@@ -13,7 +13,6 @@ $sekolah = mysqli_query($connection, "SELECT npsn, nama_sekolah FROM sekolah_ide
 <section class="section">
   <div class="section-header d-flex justify-content-between">
     <h1>Ubah Data Lainnya Sekolah</h1>
-    <a href="./lainnya.php" class="btn btn-light">Kembali</a>
   </div>
   <div class="row">
     <div class="col-12">
@@ -75,7 +74,7 @@ $sekolah = mysqli_query($connection, "SELECT npsn, nama_sekolah FROM sekolah_ide
               </div>
               
               <div class="form-group">
-                <input class="btn btn-primary d-inline" type="submit" name="proses" value="Ubah">
+              <input class="btn btn-primary" type="submit" name="proses" value="Simpan">
                 <a href="./lainnya.php" class="btn btn-danger ml-1">Batal</a>
               </div>
 
