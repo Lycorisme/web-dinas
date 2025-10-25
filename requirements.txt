@@ -1,0 +1,153 @@
+# ================================================================
+# PANDUAN SETUP LENGKAP & DEPENDENSI PROYEK DAPOKALSEL
+# ================================================================
+#
+# File ini adalah panduan terpusat dan file dependensi.
+# IKUTI LANGKAH-LANGKAH INI SECARA BERURUTAN.
+#
+# TUJUAN: Menyiapkan lingkungan untuk menjalankan skrip scraping
+#          Python proyek DapoKalsel.
+#
+# ================================================================
+# LANGKAH 0: PRASYARAT (INSTALASI PERANGKAT LUNAK)
+# ================================================================
+#
+# Jika Anda belum menginstal perangkat lunak berikut,
+# silakan instal terlebih dahulu.
+#
+# ----------------------------------------------------------------
+# 1. PYTHON 3.9+
+# ----------------------------------------------------------------
+#    - Unduh dari: https://www.python.org/downloads/
+#    - PENTING: Saat instalasi, pastikan Anda mencentang
+#      kotak "Add Python to PATH".
+#
+# ----------------------------------------------------------------
+# 2. GIT (Sistem Kontrol Versi)
+# ----------------------------------------------------------------
+#    - Unduh dari: https://git-scm.com/downloads
+#    - Ini digunakan untuk mengkloning repositori dan mengelola kode.
+#
+# ----------------------------------------------------------------
+# 3. GOOGLE CHROME
+# ----------------------------------------------------------------
+#    - Unduh dari: https://www.google.com/chrome/
+#    - Diperlukan oleh 'undetected-chromedriver' untuk scraping.
+#    - Pastikan Chrome Anda selalu ter-update ke versi terbaru.
+#
+# ----------------------------------------------------------------
+# 4. XAMPP / LARAGON (Server Lokal PHP & MySQL)
+# ----------------------------------------------------------------
+#    - Ini diperlukan untuk menjalankan antarmuka web (PHP) dan
+#      database (MySQL) yang digunakan oleh skrip Python.
+#    - XAMPP: https://www.apachefriends.org/
+#    - Laragon: https://laragon.org/
+#
+# ================================================================
+# LANGKAH 1: SETUP PROYEK
+# ================================================================
+#
+# 1. Buka Terminal (Command Prompt / Git Bash).
+#
+# 2. (Opsional) Jika belum, clone repositori proyek:
+#    git clone [URL_REPOSITORI_ANDA] dapokalsel
+#
+# 3. Masuk ke direktori proyek Anda.
+#    (Pilih salah satu sesuai server lokal Anda)
+#
+#    # Untuk pengguna Laragon:
+#    cd C:/laragon/www/dapokalsel
+#
+#    # Untuk pengguna XAMPP:
+#    cd C:/xampp/htdocs/dapokalsel
+#
+# ================================================================
+# LANGKAH 2: BUAT & AKTIFKAN VIRTUAL ENVIRONMENT
+# ================================================================
+#
+# Ini akan membuat folder 'venv' di dalam proyek Anda
+# untuk mengisolasi library Python.
+#
+# 1. Buat virtual environment:
+#    python -m venv venv
+#
+# 2. Aktifkan virtual environment:
+#    .\venv\Scripts\activate
+#
+#    (Jika berhasil, Anda akan melihat (venv) di awal baris terminal Anda)
+#
+# ================================================================
+# LANGKAH 3: INSTAL SEMUA LIBRARY PYTHON
+# ================================================================
+#
+# 1. Pastikan Anda masih berada di dalam virtual environment (venv).
+#
+# 2. Jalankan perintah berikut untuk menginstal semua package
+#    yang terdaftar di bawah ini:
+#
+#    pip install -r requirements.txt
+#
+# ----------------------------------------------------------------
+# DAFTAR LIBRARY YANG AKAN DI-INSTALL:
+# ----------------------------------------------------------------
+
+# ================================================================
+# PUSTAKA INTI SCRAPING WEB
+# ================================================================
+# Perpustakaan permintaan HTTP untuk scraping web
+requests>=2.25.1
+# Perpustakaan parsing HTML/XML
+beautifulsoup4>=4.9.3
+# Kerangka kerja otomatisasi browser web
+selenium>=4.0.0
+# Driver Chrome yang tidak terdeteksi untuk menghindari deteksi bot
+undetected-chromedriver>=3.4.0
+
+# ================================================================
+# PEMROSESAN & ANALISIS DATA
+# ================================================================
+# Perpustakaan manipulasi dan analisis data
+pandas>=1.3.0
+# Paket fundamental untuk komputasi ilmiah
+numpy>=1.21.0
+
+# ================================================================
+# KONEKTIVITAS DATABASE
+# ================================================================
+# Konektor database MySQL untuk Python
+mysql-connector-python>=8.0.25
+
+# ================================================================
+# PEMROSESAN FILE
+# ================================================================
+# Membaca dan menulis file Excel (.xlsx, .xlsm, .xltx, .xltm)
+openpyxl>=3.0.7
+# Membaca dan menulis file Excel (.xls)
+xlrd>=2.0.1
+
+# ================================================================
+# PUSTAKA TAMBAHAN (DIREKOMENDASIKAN)
+# ================================================================
+# Perpustakaan HTTP dengan connection pooling
+urllib3>=1.26.5
+# Deteksi pengkodean karakter
+chardet>=4.0.0
+# Definisi zona waktu untuk Python
+pytz>=2021.1
+# Perpustakaan parsing tanggal
+python-dateutil>=2.8.1
+# Parser file konfigurasi
+configparser>=5.0.2
+
+# ================================================================
+# SELESAI
+# ================================================================
+#
+# Instalasi selesai!
+#
+# Untuk memverifikasi, Anda dapat menjalankan:
+#    pip list
+#
+# Anda sekarang siap untuk menjalankan skrip scraping Python.
+#
+# ================================================================

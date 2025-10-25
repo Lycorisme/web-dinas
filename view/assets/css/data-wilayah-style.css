@@ -1,0 +1,178 @@
+/*
+* ===================================================
+* Custom Styles for data-wilayah.php
+* ===================================================
+*/
+
+/* Logo Interaktif */
+.navbar-area .logo-icon,
+.navbar-area .logo-text {
+    fill: #ffffff;
+    transition: fill 0.4s ease;
+}
+.navbar-area.sticky .logo-icon {
+    fill: url(#newLogoGrad);
+}
+.navbar-area.sticky .logo-text {
+    fill: #333;
+}
+
+/* Page Title Section */
+.page-title-area {
+    background: linear-gradient(135deg, #5864ff 0%, #17264c 100%);
+    padding: 180px 0 100px;
+    color: #fff;
+}
+.page-title-area h1.page-title {
+    color: #fff;
+    font-size: 48px;
+    font-weight: 700;
+}
+.page-title-area .breadcrumb-nav {
+    display: flex;
+    justify-content: flex-end;
+    margin: 0; padding: 0; list-style: none;
+}
+.page-title-area .breadcrumb-nav li {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 18px;
+}
+.page-title-area .breadcrumb-nav li a {
+    color: #fff;
+    text-decoration: none;
+    transition: all .3s ease;
+}
+.page-title-area .breadcrumb-nav li a:hover {
+    text-decoration: underline;
+}
+.page-title-area .breadcrumb-nav li::after {
+    content: '/';
+    margin: 0 10px;
+    color: rgba(255, 255, 255, 0.5);
+}
+.page-title-area .breadcrumb-nav li:last-child::after {
+    display: none;
+}
+
+/* Data Section General */
+.data-wilayah-section {
+    background-color: #f4f7fe;
+}
+
+/* Card Styles */
+.card {
+    border-radius: 15px;
+    border: none;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.07);
+    margin-bottom: 30px;
+}
+.card-header {
+    background-color: transparent;
+    border-bottom: 1px solid #eef1f9;
+    padding: 20px 25px;
+}
+.card-header .card-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: #162447;
+    margin: 0;
+}
+.card-body { padding: 25px; }
+.card-footer { background-color: transparent; border-top: 1px solid #eef1f9; }
+
+/* Stat Cards */
+.stat-card {
+    background: #fff;
+    padding: 25px;
+    display: flex;
+    align-items: center;
+    border: 1px solid #eef1f9;
+    transition: all 0.3s ease;
+}
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+}
+.stat-card .stat-icon {
+    width: 60px; height: 60px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px; color: #fff; margin-right: 20px; flex-shrink: 0;
+}
+.stat-card .stat-icon.icon-1 { background-color: #5864FF; }
+.stat-card .stat-icon.icon-2 { background-color: #ff92a5; }
+.stat-card .stat-content .stat-number {
+    font-size: 28px; font-weight: 700; color: #162447;
+    margin: 0 0 5px; line-height: 1.2;
+}
+.stat-card .stat-content .stat-title {
+    font-size: 15px; color: #5B657E; margin: 0;
+}
+
+/* Table Card & Tabs */
+.table-card .card-header { padding: 0.5rem 1rem; }
+.table-card .nav-tabs { border-bottom: none; }
+.table-card .nav-tabs .nav-link {
+    border: none;
+    color: #5B657E;
+    font-weight: 600;
+    padding: 15px 20px;
+    border-bottom: 3px solid transparent;
+    margin: 0 5px;
+}
+.table-card .nav-tabs .nav-link.active,
+.table-card .nav-tabs .nav-link:hover {
+    color: #5864FF;
+    border-bottom-color: #5864FF;
+    background-color: transparent;
+}
+.table-card .tab-content { padding-top: 20px; }
+
+/* Table Styles */
+.table { border-color: #eef1f9; }
+.table thead th {
+    background-color: #f8faff;
+    border-bottom-width: 1px;
+    font-weight: 600;
+    color: #5B657E;
+    padding: 15px;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.table tbody td { color: #5B657E; vertical-align: middle; }
+.table-hover tbody tr:hover { background-color: #f8faff; }
+
+/* Custom Badges */
+.badge-custom {
+    padding: 7px 14px;
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 8px;
+    color: #fff;
+    display: inline-block;
+}
+.badge-custom.badge-success { background-color: rgba(25, 135, 84, 0.9); }
+.badge-custom.badge-info { background-color: rgba(13, 202, 240, 0.9); }
+.badge-custom.badge-primary { background-color: rgba(13, 110, 253, 0.9); }
+
+/* Pagination */
+.pagination .page-item .page-link {
+    border-radius: 8px !important; margin: 0 4px;
+    border-color: #eef1f9; color: #5864FF;
+}
+.pagination .page-item.active .page-link {
+    background-color: #eef1f9;
+    border-color: #5864FF;
+}
+.pagination .page-item.disabled .page-link { color: #adb5bd; }
+
+/* Responsive Adjustments */
+@media (max-width: 991px) {
+    .page-title-area { padding: 150px 0 70px; }
+    .page-title-area h1.page-title { text-align: center; margin-bottom: 20px; font-size: 38px; }
+    .page-title-area .breadcrumb-nav { justify-content: center; }
+}
+@media (max-width: 767px) {
+    .stat-card .stat-content .stat-number { font-size: 24px; }
+    .table-card .nav-tabs .nav-link { padding: 12px 10px; font-size: 14px; }
+}

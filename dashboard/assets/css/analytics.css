@@ -1,0 +1,222 @@
+/* dashboard/assets/css/analytics.css */
+#school-map {
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    position: relative;
+}
+
+/* Custom marker styles */
+.custom-marker {
+    background: none;
+    border: none;
+}
+
+/* Custom popup styles */
+.custom-popup .leaflet-popup-content-wrapper {
+    border-radius: 8px;
+    box-shadow: 0 3px 14px rgba(0,0,0,0.4);
+}
+
+.custom-popup .leaflet-popup-content {
+    margin: 12px 16px;
+    line-height: 1.4;
+    font-size: 13px;
+}
+
+.school-popup h6 {
+    margin: 0 0 10px 0;
+    font-size: 15px;
+    color: #333;
+    font-weight: 600;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 5px;
+}
+
+.school-popup .popup-info p {
+    margin: 4px 0;
+    font-size: 12px;
+}
+
+.school-popup .popup-info strong {
+    color: #495057;
+    font-weight: 600;
+}
+
+/* Loading spinner for charts and map */
+.chart-loading, .map-loading {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(255, 255, 255, 0.8);
+    z-index: 1000;
+    border-radius: 8px;
+}
+
+.map-loading {
+    background-color: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(2px);
+}
+
+.card .chart-container {
+    position: relative;
+    min-height: 350px;
+}
+
+/* Filter widget enhancements */
+.card-body .form-group label {
+    font-weight: 600;
+    color: #495057;
+    font-size: 13px;
+    margin-bottom: 8px;
+}
+
+.form-control {
+    border-radius: 6px;
+    border: 1px solid #e4e6fc;
+    font-size: 14px;
+    transition: all 0.15s ease-in-out;
+}
+
+.form-control:focus {
+    border-color: #6777ef;
+    box-shadow: 0 0 0 0.2rem rgba(103, 119, 239, 0.25);
+}
+
+/* Map theme buttons */
+.btn-group .btn {
+    border-radius: 4px;
+    margin-right: 2px;
+    font-size: 12px;
+    padding: 6px 12px;
+}
+
+.btn-group .btn:last-child {
+    margin-right: 0;
+}
+
+.btn-group .btn.btn-primary {
+    background-color: #6777ef;
+    border-color: #6777ef;
+}
+
+.btn-group .btn.btn-outline-secondary:hover {
+    background-color: #6c757d;
+    border-color: #6c757d;
+    color: white;
+}
+
+/* Legend styles */
+.legend {
+    font-size: 12px;
+}
+
+.legend .fas.fa-circle {
+    font-size: 10px;
+    margin-right: 4px;
+}
+
+.text-purple {
+    color: #6f42c1 !important;
+}
+
+/* Stats cards improvements */
+.card-statistic-1 .card-icon {
+    border-radius: 8px;
+}
+
+.card-statistic-1 .card-body {
+    font-size: 24px;
+    font-weight: 700;
+    color: #34395e;
+}
+
+/* Chart container improvements */
+.card-header h4 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #34395e;
+    margin-bottom: 0;
+}
+
+/* Responsive improvements */
+@media (max-width: 768px) {
+    #school-map {
+        height: 400px !important;
+    }
+    
+    .card .chart-container {
+        min-height: 300px;
+    }
+    
+    .btn-group {
+        flex-wrap: wrap;
+    }
+    
+    .btn-group .btn {
+        margin-bottom: 5px;
+        font-size: 11px;
+        padding: 5px 8px;
+    }
+    
+    .school-popup h6 {
+        font-size: 14px;
+    }
+    
+    .school-popup .popup-info p {
+        font-size: 11px;
+    }
+}
+
+@media (max-width: 576px) {
+    .section-header h1 {
+        font-size: 24px;
+    }
+    
+    .card-statistic-1 .card-body {
+        font-size: 20px;
+    }
+    
+    .card-header h4 {
+        font-size: 14px;
+    }
+}
+
+/* Animation for loading states */
+@keyframes pulse {
+    0% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+.spinner-border {
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+/* Leaflet control improvements */
+.leaflet-control-zoom {
+    border-radius: 6px !important;
+}
+
+.leaflet-control-zoom a {
+    border-radius: 6px !important;
+    border: none !important;
+    background-color: #fff !important;
+    color: #495057 !important;
+    font-weight: 600;
+}
+
+.leaflet-control-zoom a:hover {
+    background-color: #6777ef !important;
+    color: white !important;
+}

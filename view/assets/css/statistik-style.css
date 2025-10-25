@@ -1,0 +1,182 @@
+/*
+* ===================================================
+* Custom Styles for statistik.php
+* ===================================================
+*/
+
+/* Logo Interaktif */
+.navbar-area .logo-icon,
+.navbar-area .logo-text {
+    fill: #ffffff;
+    transition: fill 0.4s ease;
+}
+.navbar-area.sticky .logo-icon {
+    fill: url(#newLogoGrad);
+}
+.navbar-area.sticky .logo-text {
+    fill: #333;
+}
+
+/* Page Title Section */
+.page-title-area {
+    background: linear-gradient(135deg, #5864ff 0%, #17264c 100%);
+    padding: 180px 0 100px;
+    color: #fff;
+}
+.page-title-area h1.page-title {
+    color: #fff;
+    font-size: 48px;
+    font-weight: 700;
+}
+.page-title-area .breadcrumb-nav {
+    display: flex;
+    justify-content: flex-end;
+    margin: 0; padding: 0; list-style: none;
+}
+.page-title-area .breadcrumb-nav li {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 18px;
+}
+.page-title-area .breadcrumb-nav li a {
+    color: #fff;
+    text-decoration: none;
+    transition: all .3s ease;
+}
+.page-title-area .breadcrumb-nav li a:hover {
+    text-decoration: underline;
+}
+.page-title-area .breadcrumb-nav li::after {
+    content: '/';
+    margin: 0 10px;
+    color: rgba(255, 255, 255, 0.5);
+}
+.page-title-area .breadcrumb-nav li:last-child::after {
+    display: none;
+}
+
+/* Data Section General */
+.statistik-section {
+    background-color: #f4f7fe;
+}
+
+/* Card Styles */
+.card {
+    border-radius: 15px;
+    border: none;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.07);
+    margin-bottom: 30px;
+}
+.card-header {
+    background-color: transparent;
+    border-bottom: 1px solid #eef1f9;
+    padding: 20px 25px;
+}
+.card-header .card-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: #162447;
+    margin: 0;
+}
+.card-body { padding: 25px; }
+
+/* Stat Cards */
+.stat-card {
+    background: #fff;
+    padding: 25px;
+    display: flex;
+    align-items: center;
+    border: 1px solid #eef1f9;
+    transition: all 0.3s ease;
+}
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+}
+.stat-card .stat-icon {
+    width: 60px; height: 60px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px; color: #fff; margin-right: 20px; flex-shrink: 0;
+}
+.stat-card .stat-icon.icon-1 { background-color: #5864FF; }
+.stat-card .stat-icon.icon-2 { background-color: #ff92a5; }
+.stat-card .stat-icon.icon-3 { background-color: #3dd5f3; }
+.stat-card .stat-icon.icon-4 { background-color: #ffc107; }
+
+.stat-card .stat-content .stat-number {
+    font-size: 28px; font-weight: 700; color: #162447;
+    margin: 0 0 5px; line-height: 1.2;
+}
+.stat-card .stat-content .stat-title {
+    font-size: 15px; color: #5B657E; margin: 0;
+}
+
+/* Map Card */
+#school-map {
+    height: 500px;
+    width: 100%;
+    border-radius: 10px;
+    position: relative;
+    z-index: 1;
+}
+.map-loading {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 2;
+}
+.map-legend {
+    margin-top: 15px;
+    text-align: center;
+}
+.legend-item {
+    font-size: 14px;
+    color: #5B657E;
+    margin: 0 15px;
+}
+.legend-item::before {
+    content: '';
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background-color: var(--color);
+    margin-right: 8px;
+    vertical-align: middle;
+}
+.leaflet-popup-content-wrapper {
+    border-radius: 8px;
+}
+.leaflet-popup-content h6 {
+    font-weight: 700;
+    color: #162447;
+    border-bottom: 2px solid #5864FF;
+    padding-bottom: 5px;
+    margin-bottom: 10px;
+}
+
+/* Charts Card */
+.chart-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #162447;
+    margin-bottom: 20px;
+    text-align: center;
+}
+.chart-container {
+    position: relative;
+    height: 350px;
+}
+
+/* Responsive */
+@media (max-width: 991px) {
+    .page-title-area { padding: 150px 0 70px; }
+    .page-title-area h1.page-title { text-align: center; margin-bottom: 20px; font-size: 38px; }
+    .page-title-area .breadcrumb-nav { justify-content: center; }
+}
+@media (max-width: 767px) {
+    .stat-card .stat-content .stat-number { font-size: 22px; }
+    #school-map { height: 400px; }
+    .map-legend { display: flex; flex-wrap: wrap; justify-content: center; }
+    .legend-item { margin: 5px 10px; }
+}
