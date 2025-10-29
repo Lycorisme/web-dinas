@@ -1,0 +1,10 @@
+{
+    "win32_chromedriver_114.0.5735.90_for_": {
+        "timestamp": "27/10/2025",
+        "binary_path": "~\\.wdm\\drivers\\chromedriver\\win32\\114.0.5735.90\\chromedriver.exe"
+    },
+    "win32_geckodriver_v0.36.0_for_": {
+        "timestamp": "27/10/2025",
+        "binary_path": "~\\.wdm\\drivers\\geckodriver\\win32\\v0.36.0\\geckodriver.exe"
+    }
+}

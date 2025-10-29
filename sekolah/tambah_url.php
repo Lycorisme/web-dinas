@@ -8,6 +8,7 @@ require_once '../helper/connection.php';
 // Cek apakah ada URL induk yang tersimpan
  $saved_url_induk = mysqli_query($connection, "SELECT * FROM url_induk_scrape WHERE status = 'active' ORDER BY created_at DESC LIMIT 1");
  $url_induk_data = mysqli_fetch_assoc($saved_url_induk);
+ $url_induk_value = $url_induk_data ? htmlspecialchars($url_induk_data['url']) : ''; // Tambahkan ini
 
 // Query untuk filter kabupaten
  $kabupaten_query = mysqli_query($connection, "SELECT id, nama_kabupaten FROM kabupaten_scrape WHERE status = 'active' ORDER BY nama_kabupaten ASC");
@@ -18,11 +19,10 @@ require_once '../helper/connection.php';
 
 <section class="section">
     <div class="section-header d-flex flex-wrap justify-content-between align-items-center">
-        <h1 class="mb-2 mb-md-0"><i class=""></i> Upload URL</h1>
+        <h1 class="mb-2 mb-md-0"><i class="fas fa-upload"></i> Kelola URL Scraping</h1>
     </div>
     <div class="d-flex justify-content-end mb-3">
-        <a href="./index.php" class="btn btn-light">
-            <i class="fas fa-arrow-left"></i> <span class="d-none d-sm-inline">Kembali</span>
+        <a href="index.php" class="btn btn-light"> <i class="fas fa-arrow-left"></i> <span class="d-none d-sm-inline">Kembali</span>
         </a>
     </div>
 
@@ -36,19 +36,19 @@ require_once '../helper/connection.php';
                 <div class="card-body">
                     <div class="row g-3">
                         <div class="col-12 col-lg-8">
-                            <label for="urlInduk" class="form-label font-weight-bold">1. Set URL Induk</label>
+                            <label for="urlInduk" class="form-label font-weight-bold">1. Set URL Induk Provinsi</label>
                             <div class="input-group">
                                 <span class="input-group-text"><i class="fas fa-link"></i></span>
                                 <input type="url" class="form-control" id="urlInduk" 
-                                       placeholder="https://dapo.kemendikdasmen.go.id"
-                                       value="">
-                                <button class="btn btn-primary" id="simpanUrlBtn">
-                                    <i class="fas fa-save me-1"></i> <span class="d-none d-sm-inline">Simpan</span>
+                                       placeholder="Contoh: https://dapo.kemdikdasmen.go.id/sp/1/150000"
+                                       value="<?= $url_induk_value ?>"> <button class="btn btn-primary" id="simpanUrlBtn">
+                                    <i class="fas fa-save me-1"></i> <span class="d-none d-sm-inline">Simpan & Mulai</span>
                                 </button>
                             </div>
+                            <small class="text-muted">Masukkan URL halaman provinsi di Dapodik.</small>
                         </div>
                         <div class="col-12 col-lg-4">
-                            <label for="filterData" class="form-label font-weight-bold">2. Pilih Jenis Data</label>
+                            <label for="filterData" class="form-label font-weight-bold">2. Tampilkan Data</label>
                             <div class="input-group">
                                 <span class="input-group-text"><i class="fas fa-filter"></i></span>
                                 <select class="form-select" id="filterData">
@@ -140,18 +140,16 @@ require_once '../helper/connection.php';
                                 <span id="progressText" class="font-weight-bold">0%</span>
                             </div>
                         </div>
-                    </div>
+                        <small id="progressStatusText" class="text-muted d-block mt-1">Menunggu...</small> </div>
                     <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
                         <div class="btn-group flex-wrap">
                             <button class="btn btn-info btn-sm btn-md-normal" id="scrapeBtn" disabled>
                                 <i class="fas fa-search-plus me-1"></i> 
-                                <span class="d-none d-sm-inline">Ambil Data Wilayah</span>
-                                <span class="d-sm-none">Scrape</span>
+                                <span class="d-none d-sm-inline">Ambil Data Turunan</span> <span class="d-sm-none">Scrape</span>
                             </button>
                             <button class="btn btn-success btn-sm btn-md-normal" id="importTerpilihBtn" disabled>
                                 <i class="fas fa-file-import me-1"></i> 
-                                <span class="d-none d-sm-inline">Import Data Sekolah</span>
-                                <span class="d-sm-none">Import</span>
+                                <span class="d-none d-sm-inline">Import Sekolah Terpilih</span> <span class="d-sm-none">Import</span>
                             </button>
                             <button class="btn btn-danger btn-sm btn-md-normal" id="batalBtn" disabled>
                                 <i class="fas fa-times-circle me-1"></i> 
@@ -167,7 +165,7 @@ require_once '../helper/connection.php';
         <div class="col-12 col-xl-4">
             <div class="card card-warning shadow-sm mb-4">
                 <div class="card-header">
-                    <h4 class="mb-0"><i class="fas fa-pencil-alt"></i> Tambah URL Manual</h4>
+                    <h4 class="mb-0"><i class="fas fa-pencil-alt"></i> Tambah URL Sekolah Manual</h4>
                 </div>
                 <div class="card-body">
                     <form id="urlForm">
@@ -209,7 +207,7 @@ require_once '../helper/connection.php';
 
             <div class="card card-info shadow-sm">
                 <div class="card-header">
-                    <h4 class="mb-0"><i class="fas fa-history"></i> URL Tersimpan</h4>
+                    <h4 class="mb-0"><i class="fas fa-history"></i> URL Sekolah Tersimpan</h4>
                 </div>
                 <div class="card-body p-0">
                     <div class="list-group list-group-flush" style="max-height: 450px; overflow-y: auto;">
@@ -246,7 +244,6 @@ require_once '../helper/connection.php';
                     </div>
                 </div>
             </div>
-
         </div>
     </div>
 </section>
@@ -268,65 +265,26 @@ require_once '../helper/connection.php';
 <style>
 /* Responsive improvements */
 @media (max-width: 768px) {
-    .section-header h1 {
-        font-size: 1.25rem;
-    }
-    
-    .card-header h4 {
-        font-size: 1rem;
-    }
-    
-    .btn-group {
-        flex-direction: column;
-        width: 100%;
-    }
-    
-    .btn-group .btn {
-        border-radius: 0.375rem !important;
-        margin-bottom: 0.25rem;
-    }
-    
-    .btn-group .btn:last-child {
-        margin-bottom: 0;
-    }
-    
-    .table-responsive {
-        font-size: 0.875rem;
-    }
+    .section-header h1 { font-size: 1.25rem; }
+    .card-header h4 { font-size: 1rem; }
+    .btn-group { flex-direction: column; width: 100%; }
+    .btn-group .btn { border-radius: 0.375rem !important; margin-bottom: 0.25rem; }
+    .btn-group .btn:last-child { margin-bottom: 0; }
+    .table-responsive { font-size: 0.875rem; }
 }
-
 @media (max-width: 576px) {
-    .input-group .btn {
-        padding: 0.375rem 0.75rem;
-        font-size: 0.875rem;
-    }
-    
-    .progress {
-        height: 1.5rem !important;
-    }
-    
-    .list-group-item h6 {
-        font-size: 0.875rem;
-    }
-    
-    .btn-sm-responsive {
-        padding: 0.25rem 0.5rem;
-        font-size: 0.75rem;
-    }
+    .input-group .btn { padding: 0.375rem 0.75rem; font-size: 0.875rem; }
+    .progress { height: 1.5rem !important; }
+    .list-group-item h6 { font-size: 0.875rem; }
 }
-
-/* Custom button size for medium screens */
 @media (min-width: 768px) {
-    .btn-md-normal {
-        padding: 0.5rem 1rem;
-        font-size: 0.875rem;
-    }
+    .btn-md-normal { padding: 0.5rem 1rem; font-size: 0.875rem; }
 }
 </style>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Variabel Global untuk state management
+    // Variabel Global
     let urlCounter = 1;
     const maxUrls = 30;
     let currentUrlIndukId = <?= $url_induk_data ? $url_induk_data['id'] : 'null' ?>;
@@ -335,24 +293,20 @@ document.addEventListener('DOMContentLoaded', function() {
     let selectedKecamatanId = '';
     let importProgressInterval = null;
     let loadingModalInstance = new bootstrap.Modal(document.getElementById('loadingModal'));
-    
-    // Simpan semua opsi kecamatan di awal untuk filtering di sisi client
+    let currentLogId = null; // <- Simpan log_id di sini
+
     const allKecamatanOptions = Array.from(document.querySelectorAll('#kecamatanFilter option')).filter(opt => opt.value !== '' && opt.value !== 'semua');
 
+    // --- EVENT LISTENERS (ADD URL, REMOVE URL, SUBMIT URL, DELETE URL) ---
+    // (Kode event listener ini tidak berubah dari file asli Anda)
     // Event listener untuk add URL manual
     const addUrlBtn = document.getElementById('addUrlBtn');
     if(addUrlBtn) {
         addUrlBtn.addEventListener('click', function() {
             if (urlCounter >= maxUrls) {
-                iziToast.warning({
-                    title: 'Peringatan',
-                    message: `Maksimal ${maxUrls} URL per upload.`,
-                    position: 'topCenter',
-                    timeout: 5000
-                });
+                iziToast.warning({ title: 'Peringatan', message: `Maksimal ${maxUrls} URL per upload.`, position: 'topCenter'});
                 return;
             }
-            
             urlCounter++;
             const urlContainer = document.getElementById('urlContainer');
             const newUrlGroup = document.createElement('div');
@@ -362,14 +316,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 <label class="form-label small">URL Sekolah #${urlCounter}</label>
                 <div class="input-group">
                     <input type="url" name="urls[${urlCounter}][url]" class="form-control form-control-sm" placeholder="URL Lengkap Sekolah" required>
-                    <button type="button" class="btn btn-danger btn-sm remove-url">
-                        <i class="fas fa-trash"></i>
-                    </button>
+                    <button type="button" class="btn btn-danger btn-sm remove-url"><i class="fas fa-trash"></i></button>
                 </div>
                 <input type="text" name="urls[${urlCounter}][description]" class="form-control form-control-sm mt-1" placeholder="Nama sekolah (opsional)">
             `;
             urlContainer.appendChild(newUrlGroup);
-            
             updateRemoveButtons();
         });
     }
@@ -388,70 +339,69 @@ document.addEventListener('DOMContentLoaded', function() {
     if(urlForm) {
         urlForm.addEventListener('submit', function(e) {
             e.preventDefault();
-            
             const formData = new FormData(this);
             const urls = [];
-            
-            // Kumpulkan semua URL
             for (let i = 1; i <= urlCounter; i++) {
                 const url = formData.get(`urls[${i}][url]`);
                 const description = formData.get(`urls[${i}][description]`);
-                
                 if (url && url.trim()) {
-                    urls.push({
-                        url: url.trim(),
-                        description: description ? description.trim() : null
-                    });
+                    urls.push({ url: url.trim(), description: description ? description.trim() : null });
                 }
             }
-            
             if (urls.length === 0) {
-                iziToast.warning({
-                    title: 'Peringatan',
-                    message: 'Masukkan setidaknya satu URL.',
-                    position: 'topCenter',
-                    timeout: 5000
-                });
+                iziToast.warning({ title: 'Peringatan', message: 'Masukkan setidaknya satu URL.', position: 'topCenter'});
                 return;
             }
-            
-            // Tampilkan progress
             document.getElementById('uploadProgress').style.display = 'block';
             document.getElementById('submitBtn').disabled = true;
-            
-            // Upload URLs satu per satu
-            uploadUrls(urls, 0);
+            uploadUrls(urls, 0); // Fungsi uploadUrls perlu didefinisikan
         });
     }
+
+     // Event listener untuk delete URL tersimpan
+    document.addEventListener('click', function(e) { 
+        if (e.target && e.target.closest('.delete-url')) {
+            const urlId = e.target.closest('.delete-url').getAttribute('data-id');
+            Swal.fire({
+                title: 'Apakah Anda yakin?', text: "URL ini akan dihapus permanen!", icon: 'warning',
+                showCancelButton: true, confirmButtonColor: '#3085d6', cancelButtonColor: '#d33',
+                confirmButtonText: 'Ya, hapus!', cancelButtonText: 'Batal'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    fetch('delete_url.php', { // Pastikan ada file delete_url.php
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ id: urlId })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            Swal.fire('Berhasil!', data.message || 'URL berhasil dihapus.', 'success');
+                            setTimeout(() => window.location.reload(), 1500);
+                        } else {
+                            Swal.fire('Gagal!', data.message || 'Gagal menghapus URL.', 'error');
+                        }
+                    })
+                    .catch(() => Swal.fire('Error!', 'Terjadi kesalahan server.', 'error'));
+                }
+            });
+        }
+    });
+
+    // --- EVENT LISTENER UTAMA ---
 
     // Event listener untuk simpan URL induk
     const simpanUrlBtn = document.getElementById('simpanUrlBtn');
     if(simpanUrlBtn) {
         simpanUrlBtn.addEventListener('click', function() {
-            const urlInduk = document.getElementById('urlInduk').value.trim();
+            const urlIndukInput = document.getElementById('urlInduk');
+            const urlInduk = urlIndukInput.value.trim();
             
             if (!urlInduk) {
-                iziToast.warning({
-                    title: 'Peringatan',
-                    message: 'Masukkan URL induk terlebih dahulu.',
-                    position: 'topCenter',
-                    timeout: 5000
-                });
+                iziToast.warning({ title: 'Peringatan', message: 'Masukkan URL induk terlebih dahulu.', position: 'topCenter'});
                 return;
             }
-            
-            // Validasi URL
-            try {
-                new URL(urlInduk);
-            } catch (e) {
-                iziToast.error({
-                    title: 'Error',
-                    message: 'URL tidak valid.',
-                    position: 'topCenter',
-                    backgroundColor: '#e74a3b',
-                    progressBarColor: '#a02622',
-                    timeout: 5000
-                });
+            try { new URL(urlInduk); } catch (e) {
+                iziToast.error({ title: 'Error', message: 'URL tidak valid.', position: 'topCenter'});
                 return;
             }
             
@@ -459,116 +409,38 @@ document.addEventListener('DOMContentLoaded', function() {
             this.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Menyimpan...';
             
             fetch('import_handler.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ action: 'save_url_induk', url: urlInduk })
             })
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
                     currentUrlIndukId = data.url_induk_id;
-                    iziToast.success({
-                        title: 'Sukses',
-                        message: 'URL induk berhasil disimpan. Memulai scraping data kabupaten...',
-                        position: 'topCenter',
-                        backgroundColor: '#1cc88a',
-                        progressBarColor: '#0f6848'
-                    });
+                    iziToast.success({ title: 'Sukses', message: 'URL induk disimpan. Memulai ambil data kabupaten...', position: 'topCenter'});
+                    urlIndukInput.value = urlInduk; // Pastikan input terupdate
                     
-                    // Set filter data ke kabupaten
+                    // Otomatis set filter ke kabupaten & scrape
                     document.getElementById('filterData').value = 'kabupaten';
                     currentDataType = 'kabupaten';
-                    
-                    // Jalankan scraping data kabupaten
-                    setTimeout(() => {
-                        triggerScraper('kabupaten');
-                    }, 1000);
+                    triggerScraper('kabupaten'); // Langsung scrape kabupaten
                 } else {
-                    iziToast.error({
-                        title: 'Error',
-                        message: data.message || 'Gagal menyimpan URL induk.',
-                        position: 'topCenter',
-                        backgroundColor: '#e74a3b',
-                        progressBarColor: '#a02622'
-                    });
+                    iziToast.error({ title: 'Error', message: data.message || 'Gagal menyimpan URL induk.', position: 'topCenter'});
                 }
             })
-            .catch(error => {
-                iziToast.error({
-                    title: 'Error',
-                    message: 'Terjadi kesalahan: ' + error.message,
-                    position: 'topCenter',
-                    backgroundColor: '#e74a3b',
-                    progressBarColor: '#a02622'
-                });
-            })
+            .catch(error => iziToast.error({ title: 'Error', message: 'Terjadi kesalahan: ' + error.message, position: 'topCenter'}))
             .finally(() => {
                 this.disabled = false;
-                this.innerHTML = '<i class="fas fa-save me-1"></i> <span class="d-none d-sm-inline">Simpan</span>';
+                this.innerHTML = '<i class="fas fa-save me-1"></i> <span class="d-none d-sm-inline">Simpan & Mulai</span>';
             });
         });
     }
 
-    // Event listener untuk delete URL tersimpan
-    document.addEventListener('click', function(e) { 
-        if (e.target && e.target.closest('.delete-url')) {
-            const urlId = e.target.closest('.delete-url').getAttribute('data-id');
-
-            Swal.fire({
-                title: 'Apakah Anda yakin?',
-                text: "URL ini akan dihapus secara permanen!",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#3085d6',
-                cancelButtonColor: '#d33',
-                confirmButtonText: 'Ya, hapus!',
-                cancelButtonText: 'Batal'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    fetch('delete_url.php', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ id: urlId })
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            Swal.fire({
-                                title: 'Berhasil!',
-                                text: data.message || 'URL berhasil dihapus.',
-                                icon: 'success',
-                                timer: 2000,
-                                showConfirmButton: false
-                            });
-                            setTimeout(() => window.location.reload(), 1500);
-                        } else {
-                            Swal.fire({
-                                title: 'Gagal!',
-                                text: data.message || 'Gagal menghapus URL.',
-                                icon: 'error'
-                            });
-                        }
-                    })
-                    .catch(() => {
-                        Swal.fire({
-                            title: 'Error!',
-                            text: 'Terjadi kesalahan pada server.',
-                            icon: 'error'
-                        });
-                    });
-                }
-            });
-        }
-    });
-
-    // Event listener untuk filter data
-    const filterData = document.getElementById('filterData');
-    if(filterData) {
-        filterData.addEventListener('change', function() {
+    // Event listener untuk filter jenis data
+    const filterDataSelect = document.getElementById('filterData');
+    if(filterDataSelect) {
+        filterDataSelect.addEventListener('change', function() {
             currentDataType = this.value;
-            
-            // Reset semua filter saat tipe data utama berubah
-            selectedKabupatenId = '';
+            selectedKabupatenId = ''; // Reset filter bawah
             selectedKecamatanId = '';
             document.getElementById('kabupatenFilter').value = '';
             document.getElementById('kecamatanFilter').value = '';
@@ -576,420 +448,86 @@ document.addEventListener('DOMContentLoaded', function() {
             const filtersContainer = document.getElementById('filtersContainer');
             const kabFilterContainer = document.getElementById('kabupatenFilterContainer');
             const kecFilterContainer = document.getElementById('kecamatanFilterContainer');
-            
-            // Logika filter
+            const tableBody = document.getElementById('tableBody');
+
+            // Sembunyikan semua filter dulu
+            filtersContainer.style.display = 'none';
+            kabFilterContainer.style.display = 'none';
+            kecFilterContainer.style.display = 'none';
+            tableBody.innerHTML = ''; // Kosongkan tabel
+
             if (currentDataType === 'kabupaten') {
-                // Untuk kabupaten, langsung tampilkan data tanpa filter
-                filtersContainer.style.display = 'none';
-                kabFilterContainer.style.display = 'none';
-                kecFilterContainer.style.display = 'none';
                 loadTableData('kabupaten');
             } else if (currentDataType === 'kecamatan') {
-                // Untuk kecamatan, tampilkan filter kabupaten
                 filtersContainer.style.display = 'block';
                 kabFilterContainer.style.display = 'block';
-                kecFilterContainer.style.display = 'none';
-                
-                // Tampilkan pesan untuk memilih filter
-                document.getElementById('tableBody').innerHTML = `
-                    <tr>
-                        <td colspan="4" class="text-center text-muted p-5">
-                            <i class="fas fa-filter fa-2x mb-2 d-block"></i>
-                            Silakan pilih Kabupaten terlebih dahulu.
-                        </td>
-                    </tr>
-                `;
-                updateDataCount();
-                updateButtonStates();
+                tableBody.innerHTML = `<tr><td colspan="4" class="text-center text-muted p-5"><i class="fas fa-filter fa-2x mb-2 d-block"></i>Pilih Kabupaten.</td></tr>`;
             } else if (currentDataType === 'sekolah') {
-                // Untuk sekolah, tampilkan filter kecamatan
                 filtersContainer.style.display = 'block';
-                kabFilterContainer.style.display = 'none';
-                kecFilterContainer.style.display = 'block';
-                
-                // Tampilkan pesan untuk memilih filter
-                document.getElementById('tableBody').innerHTML = `
-                    <tr>
-                        <td colspan="4" class="text-center text-muted p-5">
-                            <i class="fas fa-filter fa-2x mb-2 d-block"></i>
-                            Silakan pilih Kecamatan terlebih dahulu.
-                        </td>
-                    </tr>
-                `;
-                updateDataCount();
-                updateButtonStates();
+                kabFilterContainer.style.display = 'block'; // Tampilkan juga filter kab
+                kecFilterContainer.style.display = 'block'; // Tampilkan filter kec
+                filterKecamatanDropdown(''); // Kosongkan kec dulu
+                tableBody.innerHTML = `<tr><td colspan="4" class="text-center text-muted p-5"><i class="fas fa-filter fa-2x mb-2 d-block"></i>Pilih Kabupaten lalu Kecamatan.</td></tr>`;
             } else {
-                filtersContainer.style.display = 'none';
-                kabFilterContainer.style.display = 'none';
-                kecFilterContainer.style.display = 'none';
-                
-                document.getElementById('tableBody').innerHTML = `
-                    <tr>
-                        <td colspan="4" class="text-center text-muted p-5">
-                            <i class="fas fa-info-circle fa-2x mb-2 d-block"></i>
-                            Silakan atur Konfigurasi di atas untuk memulai.
-                        </td>
-                    </tr>
-                `;
-                updateDataCount();
-                updateButtonStates();
+                 tableBody.innerHTML = `<tr><td colspan="4" class="text-center text-muted p-5"><i class="fas fa-info-circle fa-2x mb-2 d-block"></i>Pilih Jenis Data.</td></tr>`;
             }
             
-            document.getElementById('progressContainer').style.display = 'none';
+            updateDataCount();
+            updateSelectedCount();
+            updateButtonStates();
+            document.getElementById('progressContainer').style.display = 'none'; // Sembunyikan progress
+            document.getElementById('selectAll').checked = false; // Uncheck select all
         });
     }
-
-    // Fungsi untuk memfilter dropdown kecamatan berdasarkan kabupaten yang dipilih
-    function filterKecamatanDropdown(selectedKabId) {
-        const kecamatanSelect = document.getElementById('kecamatanFilter');
-        const currentKecValue = kecamatanSelect.value;
-        
-        // Kosongkan opsi, sisakan yang pertama
-        kecamatanSelect.innerHTML = '<option value="">Pilih Kecamatan...</option><option value="semua">-- Semua Kecamatan --</option>';
-
-        allKecamatanOptions.forEach(option => {
-            const kabIdForKec = option.getAttribute('data-kabupaten-id');
-            // Jika memilih "Semua Kabupaten", tampilkan semua kecamatan.
-            // Atau jika ID kabupaten dari kecamatan cocok dengan yang dipilih.
-            if (selectedKabId === 'semua' || kabIdForKec === selectedKabId || !selectedKabId) {
-                kecamatanSelect.appendChild(option.cloneNode(true));
-            }
-        });
-
-        // Kembalikan nilai yang terpilih sebelumnya jika masih ada di daftar
-        kecamatanSelect.value = currentKecValue;
-    }
-
+    
     // Event listener untuk filter kabupaten
-    const kabupatenFilter = document.getElementById('kabupatenFilter');
-    if(kabupatenFilter) {
-        kabupatenFilter.addEventListener('change', function() {
+    const kabupatenFilterSelect = document.getElementById('kabupatenFilter');
+    if(kabupatenFilterSelect) {
+        kabupatenFilterSelect.addEventListener('change', function() {
             selectedKabupatenId = this.value;
-            
-            // Filter dropdown kecamatan berdasarkan kabupaten yang dipilih
-            filterKecamatanDropdown(selectedKabupatenId);
-            
+            selectedKecamatanId = ''; // Reset kecamatan
+            document.getElementById('kecamatanFilter').value = '';
+            filterKecamatanDropdown(selectedKabupatenId); // Filter opsi kecamatan
+
             if (currentDataType === 'kecamatan') {
-                // Hanya muat data jika kabupaten sudah dipilih
-                if (selectedKabupatenId) {
-                    loadTableData('kecamatan');
-                } else {
-                    // Tampilkan pesan jika kabupaten belum dipilih
-                    document.getElementById('tableBody').innerHTML = `
-                        <tr>
-                            <td colspan="4" class="text-center text-muted p-5">
-                                <i class="fas fa-filter fa-2x mb-2 d-block"></i>
-                                Silakan pilih Kabupaten terlebih dahulu.
-                            </td>
-                        </tr>
-                    `;
-                    updateDataCount();
-                    updateButtonStates();
+                if (selectedKabupatenId) { loadTableData('kecamatan'); } 
+                else { 
+                    document.getElementById('tableBody').innerHTML = `<tr><td colspan="4" class="text-center text-muted p-5">Pilih Kabupaten.</td></tr>`; 
+                    updateDataCount(); updateButtonStates(); 
                 }
+            } else if (currentDataType === 'sekolah') {
+                 // Untuk sekolah, jangan load data dulu, tunggu kecamatan dipilih
+                 document.getElementById('tableBody').innerHTML = `<tr><td colspan="4" class="text-center text-muted p-5">Pilih Kecamatan.</td></tr>`;
+                 updateDataCount(); updateButtonStates();
             }
+            document.getElementById('selectAll').checked = false;
         });
     }
     
     // Event listener untuk filter kecamatan
-    const kecamatanFilter = document.getElementById('kecamatanFilter');
-    if(kecamatanFilter) {
-        kecamatanFilter.addEventListener('change', function() {
+    const kecamatanFilterSelect = document.getElementById('kecamatanFilter');
+    if(kecamatanFilterSelect) {
+        kecamatanFilterSelect.addEventListener('change', function() {
             selectedKecamatanId = this.value;
-            
             if (currentDataType === 'sekolah') {
-                // Hanya muat data jika kecamatan sudah dipilih
-                if (selectedKecamatanId) {
-                    loadTableData('sekolah');
-                } else {
-                    // Tampilkan pesan jika kecamatan belum dipilih
-                    document.getElementById('tableBody').innerHTML = `
-                        <tr>
-                            <td colspan="4" class="text-center text-muted p-5">
-                                <i class="fas fa-filter fa-2x mb-2 d-block"></i>
-                                Silakan pilih Kecamatan terlebih dahulu.
-                            </td>
-                        </tr>
-                    `;
-                    updateDataCount();
-                    updateButtonStates();
+                if (selectedKecamatanId) { loadTableData('sekolah'); } 
+                else { 
+                    document.getElementById('tableBody').innerHTML = `<tr><td colspan="4" class="text-center text-muted p-5">Pilih Kecamatan.</td></tr>`; 
+                    updateDataCount(); updateButtonStates(); 
                 }
             }
-        });
-    }
-    
-    function loadTableData(dataType, autoScrape = false) {
-        if (!currentUrlIndukId) {
-            document.getElementById('tableBody').innerHTML = `
-                <tr>
-                    <td colspan="4" class="text-center text-warning p-5">
-                        <i class="fas fa-exclamation-triangle fa-2x mb-2 d-block"></i>
-                        Simpan URL Induk terlebih dahulu.
-                    </td>
-                </tr>
-            `;
-            updateDataCount();
-            return;
-        }
-        
-        document.getElementById('tableBody').innerHTML = `
-            <tr>
-                <td colspan="4" class="text-center p-5">
-                    <div class="spinner-border text-primary" role="status"></div>
-                    <p class="mt-2 mb-0">Memuat data ${dataType}...</p>
-                </td>
-            </tr>
-        `;
-        
-        const requestData = {
-            action: 'check_data', 
-            data_type: dataType, 
-            url_induk_id: currentUrlIndukId
-        };
-        
-        // Hanya kirim kabupaten_id jika DIPILIH dan BUKAN "semua"
-        if (dataType === 'kecamatan' && selectedKabupatenId && selectedKabupatenId !== 'semua') {
-            requestData.kabupaten_id = selectedKabupatenId;
-        }
-        // Hanya kirim kecamatan_id jika DIPILIH dan BUKAN "semua"
-        if (dataType === 'sekolah' && selectedKecamatanId && selectedKecamatanId !== 'semua') {
-            requestData.kecamatan_id = selectedKecamatanId;
-        }
-        
-        fetch('import_handler.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(requestData)
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success && data.has_data) {
-                renderTableData(dataType, data.data);
-            } else {
-                if(autoScrape && dataType === 'kabupaten'){
-                    triggerScraper('kabupaten');
-                } else {
-                    document.getElementById('tableBody').innerHTML = `
-                        <tr>
-                            <td colspan="4" class="text-center text-muted p-5">
-                                <i class="fas fa-inbox fa-2x mb-2 d-block"></i>
-                                Data ${dataType} tidak ditemukan untuk filter ini. <br>
-                                Coba scrape data dari tingkat sebelumnya atau ubah filter.
-                            </td>
-                        </tr>
-                    `;
-                }
-            }
-        })
-        .catch(error => {
-            document.getElementById('tableBody').innerHTML = `
-                <tr>
-                    <td colspan="4" class="text-center text-danger p-5"><i class="fas fa-exclamation-circle me-2"></i>Error memuat data</td>
-                </tr>
-            `;
-        })
-        .finally(() => {
-            updateDataCount();
-            updateSelectedCount();
-            updateButtonStates();
+             document.getElementById('selectAll').checked = false;
         });
     }
 
-    // Function untuk upload URLs manual
-    function uploadUrls(urls, index) {
-        if (index >= urls.length) {
-            document.getElementById('uploadProgress').style.display = 'none';
-            document.getElementById('submitBtn').disabled = false;
-            document.getElementById('urlForm').reset();
-            
-            urlCounter = 1;
-            const urlContainer = document.getElementById('urlContainer');
-            urlContainer.innerHTML = `
-                <div class="url-input-group mb-3" data-index="1">
-                    <label class="form-label small">URL Sekolah #1</label>
-                    <div class="input-group">
-                        <input type="url" name="urls[1][url]" class="form-control form-control-sm" placeholder="URL Lengkap Sekolah" required>
-                        <button type="button" class="btn btn-danger btn-sm remove-url" style="display: none;">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                    <input type="text" name="urls[1][description]" class="form-control form-control-sm mt-1" placeholder="Nama sekolah (opsional)">
-                </div>
-            `;
-            
-            iziToast.success({
-                title: 'Sukses',
-                message: `${urls.length} URL berhasil diupload.`,
-                position: 'topCenter',
-                backgroundColor: '#1cc88a',
-                progressBarColor: '#0f6848'
-            });
-            
-            setTimeout(() => window.location.reload(), 2000);
-            return;
-        }
-        
-        const url = urls[index];
-        const progress = Math.round(((index + 1) / urls.length) * 100);
-        
-        document.getElementById('uploadProgressBar').style.width = progress + '%';
-        document.getElementById('uploadStatusText').textContent = `Upload ${index + 1}/${urls.length}: ${url.description || url.url}`;
-        
-        fetch('import_handler.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'add_url', url: url.url, description: url.description })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                setTimeout(() => uploadUrls(urls, index + 1), 500);
-            } else {
-                document.getElementById('uploadProgress').style.display = 'none';
-                document.getElementById('submitBtn').disabled = false;
-                iziToast.error({
-                    title: 'Error',
-                    message: `Gagal upload URL ${index + 1}: ${data.message}`,
-                    position: 'topCenter',
-                    backgroundColor: '#e74a3b',
-                    progressBarColor: '#a02622'
-                });
-            }
-        })
-        .catch(error => {
-            document.getElementById('uploadProgress').style.display = 'none';
-            document.getElementById('submitBtn').disabled = false;
-            iziToast.error({
-                title: 'Error',
-                message: `Error upload URL ${index + 1}: ${error.message}`,
-                position: 'topCenter',
-                backgroundColor: '#e74a3b',
-                progressBarColor: '#a02622'
-            });
-        });
-    }
-
-    function updateRemoveButtons() {
-        const urlGroups = document.querySelectorAll('.url-input-group');
-        urlGroups.forEach(group => {
-            const removeBtn = group.querySelector('.remove-url');
-            if (urlGroups.length > 1) {
-                removeBtn.style.display = 'block';
-            } else {
-                removeBtn.style.display = 'none';
-            }
-        });
-    }
-
-    function renumberUrlGroups() {
-        const urlGroups = document.querySelectorAll('.url-input-group');
-        urlCounter = 0;
-        
-        urlGroups.forEach((group, index) => {
-            urlCounter++;
-            const newIndex = index + 1;
-            
-            group.setAttribute('data-index', newIndex);
-            group.querySelector('label').textContent = `URL Sekolah #${newIndex}`;
-            
-            const urlInput = group.querySelector('input[type="url"]');
-            const descInput = group.querySelector('input[type="text"]');
-            
-            urlInput.name = `urls[${newIndex}][url]`;
-            descInput.name = `urls[${newIndex}][description]`;
-        });
-    }
-
-    // Event listener untuk checkbox di body
-    document.addEventListener('change', function(e) {
+    // Event listener untuk checkbox di body tabel
+    document.getElementById('tableBody').addEventListener('change', function(e) {
         if (e.target && e.target.classList.contains('row-checkbox')) {
             updateSelectedCount();
             updateSelectAllState();
             updateButtonStates();
         }
     });
-    
-    const scrapeBtn = document.getElementById('scrapeBtn');
-    if(scrapeBtn) {
-        scrapeBtn.addEventListener('click', function() {
-            if (!currentDataType) {
-                iziToast.warning({ 
-                    title: 'Peringatan', 
-                    message: 'Pilih tipe data terlebih dahulu.', 
-                    position: 'topCenter', 
-                    timeout: 5000 
-                });
-                return;
-            }
-            
-            const selectedIds = getSelectedIds();
-            if (selectedIds.length === 0) {
-                iziToast.warning({ 
-                    title: 'Peringatan', 
-                    message: 'Pilih setidaknya satu data untuk di-scrape.', 
-                    position: 'topCenter', 
-                    timeout: 5000 
-                });
-                return;
-            }
-            
-            let nextScraperType = '';
-            if(currentDataType === 'kabupaten') nextScraperType = 'kecamatan';
-            else if(currentDataType === 'kecamatan') nextScraperType = 'sekolah';
-            
-            if(!nextScraperType) {
-                iziToast.info({ 
-                    title: 'Info', 
-                    message: 'Tidak ada data turunan untuk di-scrape dari data sekolah.', 
-                    position: 'topCenter', 
-                    timeout: 5000 
-                });
-                return;
-            }
-
-            // Untuk scraping kecamatan, kirim semua kabupaten_id yang dipilih
-            if (nextScraperType === 'kecamatan' && currentDataType === 'kabupaten') {
-                // Kirim semua ID kabupaten yang dipilih
-                triggerScraperForKecamatan(selectedIds);
-            } else {
-                triggerScraper(nextScraperType, selectedIds);
-            }
-        });
-    }
-    
-    const importTerpilihBtn = document.getElementById('importTerpilihBtn');
-    if(importTerpilihBtn) {
-        importTerpilihBtn.addEventListener('click', function() {
-            if (currentDataType !== 'sekolah') {
-                iziToast.warning({ 
-                    title: 'Peringatan', 
-                    message: 'Import hanya tersedia untuk data sekolah.', 
-                    position: 'topCenter', 
-                    timeout: 5000 
-                });
-                return;
-            }
-            
-            const selectedIds = getSelectedIds();
-            if (selectedIds.length === 0) {
-                iziToast.warning({ 
-                    title: 'Peringatan', 
-                    message: 'Pilih setidaknya satu sekolah untuk diimport.', 
-                    position: 'topCenter', 
-                    timeout: 5000 
-                });
-                return;
-            }
-            
-            importData('selected', selectedIds);
-        });
-    }
-    
-    const batalBtn = document.getElementById('batalBtn');
-    if(batalBtn) {
-        batalBtn.addEventListener('click', function() {
-            cancelCurrentProcess();
-        });
-    }
 
     // Event listener untuk select all checkbox
     const selectAllCheckbox = document.getElementById('selectAll');
@@ -1002,226 +540,335 @@ document.addEventListener('DOMContentLoaded', function() {
             updateButtonStates();
         });
     }
+    
+    // Event listener tombol Scrape
+    const scrapeBtn = document.getElementById('scrapeBtn');
+    if(scrapeBtn) {
+        scrapeBtn.addEventListener('click', function() {
+            if (!currentDataType) {
+                iziToast.warning({ title: 'Peringatan', message: 'Pilih tipe data dulu.', position: 'topCenter'});
+                return;
+            }
+            const selectedIds = getSelectedIds();
+            if (selectedIds.length === 0) {
+                iziToast.warning({ title: 'Peringatan', message: 'Pilih minimal satu item.', position: 'topCenter'});
+                return;
+            }
+            
+            let nextScraperType = '';
+            if(currentDataType === 'kabupaten') nextScraperType = 'kecamatan';
+            else if(currentDataType === 'kecamatan') nextScraperType = 'sekolah';
+            
+            if(!nextScraperType) {
+                iziToast.info({ title: 'Info', message: 'Tidak ada data turunan dari sekolah.', position: 'topCenter'});
+                return;
+            }
 
-    function renderTableData(dataType, data) {
-        const tableBody = document.getElementById('tableBody');
-        tableBody.innerHTML = '';
-        
-        if (data.length === 0) {
-            tableBody.innerHTML = `
-                <tr>
-                    <td colspan="4" class="text-center text-muted p-5"><i class="fas fa-inbox me-2"></i>Tidak ada data ${dataType} yang tersedia</td>
-                </tr>
-            `;
+            // Panggil fungsi trigger yang sesuai
+            triggerScraper(nextScraperType, selectedIds);
+        });
+    }
+    
+    // Event listener tombol Import
+    const importTerpilihBtn = document.getElementById('importTerpilihBtn');
+    if(importTerpilihBtn) {
+        importTerpilihBtn.addEventListener('click', function() {
+            if (currentDataType !== 'sekolah') {
+                iziToast.warning({ title: 'Peringatan', message: 'Import hanya untuk data sekolah.', position: 'topCenter'});
+                return;
+            }
+            const selectedIds = getSelectedIds();
+            if (selectedIds.length === 0) {
+                iziToast.warning({ title: 'Peringatan', message: 'Pilih minimal satu sekolah.', position: 'topCenter'});
+                return;
+            }
+            importData('selected', selectedIds);
+        });
+    }
+    
+    // Event listener tombol Batal
+    const batalBtn = document.getElementById('batalBtn');
+    if(batalBtn) {
+        batalBtn.addEventListener('click', function() {
+            cancelCurrentProcess();
+        });
+    }
+
+    // --- FUNGSI-FUNGSI UTILITY ---
+
+    function loadTableData(dataType) {
+        if (!currentUrlIndukId && dataType !== 'manual') { // Kecuali manual
+            document.getElementById('tableBody').innerHTML = `<tr><td colspan="4" class="text-center text-warning p-5">Simpan URL Induk dulu.</td></tr>`;
+            updateDataCount(); updateButtonStates();
             return;
         }
         
+        document.getElementById('tableBody').innerHTML = `<tr><td colspan="4" class="text-center p-5"><div class="spinner-border text-primary"></div><p class="mt-2 mb-0">Memuat data ${dataType}...</p></td></tr>`;
+        
+        const requestData = { action: 'check_data', data_type: dataType, url_induk_id: currentUrlIndukId };
+        
+        if (dataType === 'kecamatan' && selectedKabupatenId && selectedKabupatenId !== 'semua') { requestData.kabupaten_id = selectedKabupatenId; }
+        if (dataType === 'sekolah') {
+             if (selectedKabupatenId && selectedKabupatenId !== 'semua') { requestData.kabupaten_id = selectedKabupatenId; } // Kirim juga kab_id
+             if (selectedKecamatanId && selectedKecamatanId !== 'semua') { requestData.kecamatan_id = selectedKecamatanId; }
+        }
+        
+        fetch('import_handler.php', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.has_data) {
+                renderTableData(dataType, data.data);
+            } else {
+                 document.getElementById('tableBody').innerHTML = `<tr><td colspan="4" class="text-center text-muted p-5"><i class="fas fa-inbox fa-2x mb-2 d-block"></i>Data ${dataType} tidak ditemukan.</td></tr>`;
+            }
+        })
+        .catch(error => {
+            document.getElementById('tableBody').innerHTML = `<tr><td colspan="4" class="text-center text-danger p-5"><i class="fas fa-exclamation-circle me-2"></i>Error: ${error.message}</td></tr>`;
+        })
+        .finally(() => {
+            updateDataCount(); updateSelectedCount(); updateButtonStates();
+             document.getElementById('selectAll').checked = false; // Uncheck select all
+        });
+    }
+
+    function renderTableData(dataType, data) {
+        const tableBody = document.getElementById('tableBody');
+        tableBody.innerHTML = ''; // Kosongkan dulu
+        if (data.length === 0) {
+            tableBody.innerHTML = `<tr><td colspan="4" class="text-center text-muted p-5">Tidak ada data.</td></tr>`;
+            return;
+        }
         data.forEach((item, index) => {
             const nama = item.nama_kabupaten || item.nama_kecamatan || item.nama_sekolah || 'N/A';
             const url = item.url || '#';
             const row = `
                 <tr>
-                  <td class="text-center align-middle">
-                    <div class="form-check d-flex justify-content-center align-items-center h-100">
-                      <input type="checkbox" class="form-check-input row-checkbox" value="${item.id}">
-                    </div>
-                  </td>
+                  <td class="text-center align-middle"><div class="form-check d-flex justify-content-center align-items-center h-100"><input type="checkbox" class="form-check-input row-checkbox" value="${item.id}"></div></td>
                   <td>${index + 1}</td>
                   <td>${escapeHtml(nama)}</td>
-                  <td class="d-none d-md-table-cell">
-                    <a href="${escapeHtml(url)}" target="_blank" class="text-decoration-none small" title="${escapeHtml(url)}">
-                      <i class="fas fa-external-link-alt me-1"></i>
-                      ${escapeHtml(url.substring(0, 60)) + (url.length > 60 ? '...' : '')}
-                    </a>
-                  </td>
-                </tr>
-              `;
+                  <td class="d-none d-md-table-cell"><a href="${escapeHtml(url)}" target="_blank" class="text-decoration-none small" title="${escapeHtml(url)}"><i class="fas fa-external-link-alt me-1"></i>${escapeHtml(url.substring(0, 60)) + (url.length > 60 ? '...' : '')}</a></td>
+                </tr>`;
             tableBody.innerHTML += row;
         });
-        document.getElementById('selectAll').checked = false;
     }
-    
+
     function triggerScraper(scraperType, selectedIds = []) {
-        showLoadingModal(
-          `Mengambil data ${scraperType}`,
-          `Proses ini memakan waktu sekitar 40 menit, harap tunggu...`
-        );
+        if (!currentUrlIndukId && scraperType !== 'kecamatan' && scraperType !== 'sekolah') {
+             iziToast.error({ title: 'Error', message: 'URL Induk belum disimpan.', position: 'topCenter'});
+             return;
+        }
+        
+        showLoadingModal(`Mengambil data ${scraperType}`, `Proses mungkin perlu waktu...`);
         document.getElementById('progressContainer').style.display = 'block';
-        updateImportProgress(0, `Memulai scraping ${scraperType}...`);
+        updateImportProgress(0, `Memulai ${scraperType}...`, `Memulai ${scraperType}...`);
         document.getElementById('batalBtn').disabled = false;
         
+        // Siapkan payload
+        let payload = { 
+            action: 'trigger_scraper', 
+            scraper_type: scraperType, 
+            user_id: 1 // Ganti jika perlu
+        };
+        
+        // Tambahkan ID yang relevan
+        if (scraperType === 'kabupaten' || scraperType === 'transfer') {
+             payload.url_induk_id = currentUrlIndukId;
+        } else { // kecamatan atau sekolah
+             payload.selected_ids = selectedIds;
+             // url_induk_id tidak dikirim langsung, PHP akan mencarinya
+        }
+        
         fetch('import_handler.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                action: 'trigger_scraper', 
-                scraper_type: scraperType, 
-                url_induk_id: currentUrlIndukId, 
-                selected_ids: selectedIds 
-            })
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
         })
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                monitorProgress(scraperType, `Proses scraping ${scraperType} selesai.`);
+                currentLogId = data.log_id; // <- Simpan log_id dari respons
+                monitorProgress(scraperType, `Proses ${scraperType} selesai.`);
             } else {
                 hideLoadingModal();
-                iziToast.error({title: 'Error', message: data.message || `Gagal memulai scraping ${scraperType}.`, backgroundColor: '#e74a3b', progressBarColor: '#a02622'});
-                updateImportProgress(0, 'Error: ' + (data.message || `Scraping ${scraperType} gagal.`));
+                iziToast.error({title: 'Error', message: data.message || `Gagal memulai ${scraperType}.`});
+                updateImportProgress(0, 'Gagal', 'Error: ' + (data.message || 'Gagal memulai.'));
                 document.getElementById('batalBtn').disabled = true;
                 setTimeout(() => { document.getElementById('progressContainer').style.display = 'none'; }, 3000);
             }
         })
         .catch(error => {
             hideLoadingModal();
-            updateImportProgress(0, 'Error: ' + error.message);
+            updateImportProgress(0, 'Gagal', 'Error: ' + error.message);
             document.getElementById('batalBtn').disabled = true;
             setTimeout(() => { document.getElementById('progressContainer').style.display = 'none'; }, 3000);
         });
     }
-    
-    // Fungsi untuk scraping kecamatan dengan multiple kabupaten
-    function triggerScraperForKecamatan(kabupatenIds) {
-        showLoadingModal(
-          'Mengambil data Kecamatan',
-          'Proses ini memakan waktu sekitar 5 menit per kabupaten, harap tunggu...'
-        );
-        document.getElementById('progressContainer').style.display = 'block';
-        updateImportProgress(0, 'Memulai scraping kecamatan...');
-        document.getElementById('batalBtn').disabled = false;
-        
-        // Kirim semua kabupaten_ids sebagai parameter
-        fetch('import_handler.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                action: 'trigger_scraper', 
-                scraper_type: 'kecamatan', 
-                url_induk_id: currentUrlIndukId, 
-                selected_ids: kabupatenIds // Kirim semua kabupaten_ids
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                monitorProgress('kecamatan', 'Proses scraping kecamatan selesai.');
-            } else {
-                hideLoadingModal();
-                iziToast.error({
-                    title: 'Error', 
-                    message: data.message || 'Gagal memulai scraping kecamatan.', 
-                    backgroundColor: '#e74a3b', 
-                    progressBarColor: '#a02622'
-                });
-                updateImportProgress(0, 'Error: ' + (data.message || 'Scraping kecamatan gagal.'));
-                document.getElementById('batalBtn').disabled = true;
-                setTimeout(() => { document.getElementById('progressContainer').style.display = 'none'; }, 3000);
-            }
-        })
-        .catch(error => {
-            hideLoadingModal();
-            updateImportProgress(0, 'Error: ' + error.message);
-            document.getElementById('batalBtn').disabled = true;
-            setTimeout(() => { document.getElementById('progressContainer').style.display = 'none'; }, 3000);
-        });
-    }
-    
+
     function importData(type, selectedIds = []) {
-        showLoadingModal(
-          'Import Data Sekolah',
-          'Proses ini memakan waktu sekitar 5 menit, harap tunggu.'
-        );
+         if (!currentUrlIndukId) {
+             iziToast.error({ title: 'Error', message: 'URL Induk belum disimpan.', position: 'topCenter'});
+             return;
+         }
+        showLoadingModal('Import Data Sekolah', 'Proses ini mungkin perlu waktu.');
         document.getElementById('progressContainer').style.display = 'block';
-        updateImportProgress(0, 'Memulai import data sekolah...');
-        document.getElementById('batalBtn').disabled = false;
+        updateImportProgress(0, 'Memulai import...', 'Memulai import...');
+        document.getElementById('batalBtn').disabled = false; // Aktifkan batal
+        
+        // Untuk import, kita perlu url_induk_id
+        let payload = { 
+            action: 'import_to_scraping_urls', 
+            import_type: type, 
+            selected_ids: selectedIds, 
+            data_type: currentDataType, 
+            url_induk_id: currentUrlIndukId,
+            user_id: 1
+        };
         
         fetch('import_handler.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'import_to_scraping_urls', import_type: type, selected_ids: selectedIds, data_type: currentDataType, url_induk_id: currentUrlIndukId })
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
         })
         .then(response => response.json())
         .then(data => {
+            hideLoadingModal(); // Sembunyikan modal setelah selesai
+            document.getElementById('batalBtn').disabled = true; // Nonaktifkan batal
             if (data.success) {
-                monitorProgress('transfer', 'Proses import selesai. Halaman akan dimuat ulang.');
+                updateImportProgress(100, 'Selesai', `Import berhasil: ${data.inserted} baru, ${data.updated} update.`);
+                iziToast.success({ title: 'Sukses', message: data.message || 'Import berhasil.', position: 'topCenter'});
+                 setTimeout(() => window.location.reload(), 2000); // Reload halaman
             } else {
-                hideLoadingModal();
-                updateImportProgress(0, 'Error: ' + (data.message || 'Import gagal.'));
-                document.getElementById('batalBtn').disabled = true;
-                setTimeout(() => { document.getElementById('progressContainer').style.display = 'none'; }, 3000);
+                 updateImportProgress(0, 'Gagal', 'Error: ' + (data.message || 'Import gagal.'));
+                 iziToast.error({ title: 'Error', message: data.message || 'Import gagal.', position: 'topCenter'});
             }
+             setTimeout(() => { document.getElementById('progressContainer').style.display = 'none'; }, 5000);
         })
         .catch(error => {
             hideLoadingModal();
-            updateImportProgress(0, 'Error: ' + error.message);
+            updateImportProgress(0, 'Gagal', 'Error: ' + error.message);
             document.getElementById('batalBtn').disabled = true;
             setTimeout(() => { document.getElementById('progressContainer').style.display = 'none'; }, 3000);
+            iziToast.error({ title: 'Error', message: 'Terjadi kesalahan jaringan.', position: 'topCenter'});
         });
     }
     
+    // --- FUNGSI monitorProgress (YANG SUDAH DIPERBAIKI) ---
     function monitorProgress(processType, successMessage) {
         if (importProgressInterval) clearInterval(importProgressInterval);
         
+        // Pastikan kita punya log_id jika dibutuhkan
+        if ((processType === 'kecamatan' || processType === 'sekolah') && !currentLogId) {
+            console.error("Error: log_id tidak ditemukan untuk memonitor proses", processType);
+            iziToast.error({ title: 'Error Internal', message: 'Log ID tidak ditemukan.', position: 'topCenter' });
+            hideLoadingModal();
+            document.getElementById('batalBtn').disabled = true;
+            setTimeout(() => { document.getElementById('progressContainer').style.display = 'none'; }, 3000);
+            return; 
+        }
+
         importProgressInterval = setInterval(() => {
+            // --- PERBAIKAN DI SINI ---
+            let payload = {
+                action: 'get_progress', 
+                process_type: processType
+            };
+            
+            // Kirim log_id untuk kecamatan/sekolah, url_induk_id untuk lainnya
+            if (processType === 'kecamatan' || processType === 'sekolah') {
+                payload.log_id = currentLogId; 
+            } else { // kabupaten atau transfer
+                // Pastikan currentUrlIndukId ada
+                 if (!currentUrlIndukId) {
+                     console.error("Error: currentUrlIndukId tidak ada untuk proses", processType);
+                     clearInterval(importProgressInterval);
+                     // Mungkin tambahkan notifikasi error di sini
+                     return;
+                 }
+                payload.url_induk_id = currentUrlIndukId;
+            }
+            // --- AKHIR PERBAIKAN ---
+
             fetch('import_handler.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'get_progress', process_type: processType, url_induk_id: currentUrlIndukId })
+                body: JSON.stringify(payload) // Gunakan payload yang sudah disiapkan
             })
             .then(response => response.json())
             .then(data => {
-                if (data.success) {
+                if (data.success && data.progress) { // Pastikan data.progress ada
                     const progress = data.progress;
-                    updateImportProgress(progress.percentage, progress.status);
-                    updateLoadingModal(null, progress.status);
+                    updateImportProgress(progress.percentage, progress.status, progress.status); // Update bar & teks status
+                    updateLoadingModal(null, progress.status); // Update detail modal
                     
                     if (progress.completed) {
                         clearInterval(importProgressInterval);
                         hideLoadingModal();
                         document.getElementById('batalBtn').disabled = true;
                         
-                        setTimeout(() => { document.getElementById('progressContainer').style.display = 'none'; }, 5000);
+                        // Pastikan progress 100% saat selesai
+                        updateImportProgress(100, progress.status, progress.status); 
+                        
+                        setTimeout(() => { 
+                            document.getElementById('progressContainer').style.display = 'none'; 
+                            // Reset progress bar untuk eksekusi berikutnya
+                             updateImportProgress(0, "Menunggu...", "Menunggu..."); 
+                        }, 5000); // Sembunyikan setelah 5 detik
 
                         if (progress.success) {
-                            iziToast.success({ title: 'Sukses', message: successMessage, position: 'topCenter', backgroundColor: '#1cc88a', progressBarColor: '#0f6848' });
-                            if (processType === 'transfer') {
-                                setTimeout(() => window.location.reload(), 2000);
+                            iziToast.success({ title: 'Sukses', message: successMessage, position: 'topCenter'});
+                            // Muat ulang data tabel setelah scraping KECUALI transfer
+                            if (processType !== 'transfer') {
+                                 const currentFilter = document.getElementById('filterData').value;
+                                 if (currentFilter) {
+                                    setTimeout(() => loadTableData(currentFilter), 1000); 
+                                 }
                             } else {
-                                const currentFilter = document.getElementById('filterData').value;
-                                if (currentFilter) {
-                                   loadTableData(currentFilter);
-                                }
+                                // Reload halaman setelah transfer (import sekolah)
+                                setTimeout(() => window.location.reload(), 2000);
                             }
                         } else {
-                           iziToast.error({ title: 'Error', message: `Proses ${processType} gagal: ${progress.error}`, position: 'topCenter', backgroundColor: '#e74a3b', progressBarColor: '#a02622' });
+                           const errorMessage = progress.error || `Proses ${processType} gagal.`;
+                           iziToast.error({ title: 'Gagal', message: errorMessage, position: 'topCenter', timeout: 7000 });
                         }
+                         currentLogId = null; // Reset currentLogId setelah proses selesai
                     }
                 } else {
                     clearInterval(importProgressInterval);
                     hideLoadingModal();
+                    document.getElementById('batalBtn').disabled = true;
                     setTimeout(() => { document.getElementById('progressContainer').style.display = 'none'; }, 3000);
-                    iziToast.error({title:'Error', message: 'Gagal memonitor progress.', backgroundColor: '#e74a3b', progressBarColor: '#a02622'});
+                    const errorMsg = data.message || 'Gagal mendapatkan status progress.';
+                    iziToast.error({title:'Error Polling', message: errorMsg});
+                    currentLogId = null; 
                 }
             })
             .catch(error => {
                 console.error('Error monitoring progress:', error);
                 clearInterval(importProgressInterval);
                 hideLoadingModal();
+                document.getElementById('batalBtn').disabled = true;
                 setTimeout(() => { document.getElementById('progressContainer').style.display = 'none'; }, 3000);
+                iziToast.error({ title: 'Error Jaringan', message: 'Gagal menghubungi server.', position: 'topCenter' });
+                currentLogId = null; 
             });
-        }, 2000);
+        }, 2000); 
     }
     
-    function updateImportProgress(percentage, statusText) {
+    // Fungsi update progress (bar dan teks status)
+    function updateImportProgress(percentage, barText, statusText) {
         const progressBar = document.getElementById('progressBar');
-        const progressText = document.getElementById('progressText');
+        const progressTextSpan = document.getElementById('progressText'); // Span di dalam bar
+        const progressStatusText = document.getElementById('progressStatusText'); // Teks di bawah bar
         
-        percentage = Math.round(percentage);
+        percentage = Math.max(0, Math.min(100, Math.round(percentage))); // Pastikan 0-100
+
         if(progressBar) {
             progressBar.style.width = percentage + '%';
             progressBar.setAttribute('aria-valuenow', percentage);
+            // Ganti warna berdasarkan status
             progressBar.classList.remove('bg-info', 'bg-success', 'bg-danger');
-            if (statusText && statusText.toLowerCase().includes('error')) {
+            if (statusText && statusText.toLowerCase().includes('gagal') || statusText.toLowerCase().includes('error')) {
                 progressBar.classList.add('bg-danger');
             } else if (percentage >= 100) {
                 progressBar.classList.add('bg-success');
@@ -1229,101 +876,157 @@ document.addEventListener('DOMContentLoaded', function() {
                 progressBar.classList.add('bg-info');
             }
         }
-        if(progressText) progressText.textContent = percentage + '%';
+        if(progressTextSpan) {
+             progressTextSpan.textContent = barText || (percentage + '%'); // Tampilkan teks status di bar jika ada
+        }
+         if(progressStatusText) {
+             progressStatusText.textContent = statusText || 'Memproses...'; // Tampilkan teks status di bawah bar
+         }
     }
     
     function cancelCurrentProcess() {
+        // Ambil ID yang relevan (log_id atau url_induk_id)
+        let cancelPayload = { action: 'cancel_process' };
+        if (currentLogId && (currentDataType === 'kecamatan' || currentDataType === 'sekolah')) {
+            cancelPayload.log_id = currentLogId; 
+        } else if (currentUrlIndukId) {
+             cancelPayload.url_induk_id = currentUrlIndukId;
+        } else {
+             iziToast.warning({ title: 'Info', message: 'Tidak ada proses aktif untuk dibatalkan.', position: 'topCenter'});
+             return;
+        }
+
         fetch('import_handler.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'cancel_process', url_induk_id: currentUrlIndukId })
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(cancelPayload)
         })
         .then(response => response.json())
         .then(data => {
             if (data.success) {
                 clearInterval(importProgressInterval);
                 hideLoadingModal();
-                updateImportProgress(0, 'Dibatalkan oleh pengguna');
+                updateImportProgress(0, 'Dibatalkan', 'Dibatalkan oleh pengguna');
                 document.getElementById('batalBtn').disabled = true;
-                document.getElementById('progressContainer').style.display = 'none';
-                iziToast.info({ title: 'Info', message: 'Proses berhasil dibatalkan.', position: 'topCenter', backgroundColor: '#1cc88a', progressBarColor: '#0f6848' });
+                setTimeout(() => { document.getElementById('progressContainer').style.display = 'none'; }, 3000);
+                iziToast.info({ title: 'Info', message: 'Proses berhasil dibatalkan.', position: 'topCenter'});
+                currentLogId = null; // Reset log id
             } else {
-                iziToast.error({ title: 'Error', message: 'Gagal membatalkan proses: ' + (data.message || 'Unknown error'), position: 'topCenter', backgroundColor: '#e74a3b', progressBarColor: '#a02622' });
+                iziToast.error({ title: 'Error', message: 'Gagal membatalkan proses: ' + (data.message || 'Error tidak diketahui')});
             }
         })
-        .catch(error => {
-            iziToast.error({ title: 'Error', message: 'Terjadi kesalahan: ' + error.message, position: 'topCenter', backgroundColor: '#e74a3b', progressBarColor: '#a02622' });
-        });
+        .catch(error => iziToast.error({ title: 'Error', message: 'Kesalahan jaringan: ' + error.message}));
     }
 
+    // --- Fungsi Update UI Lainnya (tidak berubah) ---
     function updateButtonStates() {
         const hasData = document.querySelectorAll('#tableBody .row-checkbox').length > 0;
         const hasSelection = document.querySelectorAll('.row-checkbox:checked').length > 0;
         const isSekolahSelected = currentDataType === 'sekolah';
         
+        // Tombol Scrape aktif jika: ada data, ada yg dipilih, DAN BUKAN data sekolah
         document.getElementById('scrapeBtn').disabled = !(hasData && hasSelection && !isSekolahSelected);
-        document.getElementById('importTerpilihBtn').disabled = !(isSekolahSelected && hasSelection);
-    }
-    
-    function updateDataCount() {
-        document.getElementById('dataCount').textContent = document.querySelectorAll('#tableBody .row-checkbox').length;
-    }
-    
-    function updateSelectedCount() {
-        document.getElementById('selectedCount').textContent = document.querySelectorAll('.row-checkbox:checked').length;
-    }
-    
-    function updateSelectAllState() {
-        const totalCheckboxes = document.querySelectorAll('.row-checkbox').length;
-        const checkedCheckboxes = document.querySelectorAll('.row-checkbox:checked').length;
-        const selectAllCheckbox = document.getElementById('selectAll');
         
-        if (totalCheckboxes === 0) {
-            selectAllCheckbox.indeterminate = false;
-            selectAllCheckbox.checked = false;
-        } else if (checkedCheckboxes === 0) {
-            selectAllCheckbox.indeterminate = false;
-            selectAllCheckbox.checked = false;
-        } else if (checkedCheckboxes === totalCheckboxes) {
-            selectAllCheckbox.indeterminate = false;
-            selectAllCheckbox.checked = true;
-        } else {
-            selectAllCheckbox.indeterminate = true;
-        }
+        // Tombol Import aktif jika: tipe data sekolah DAN ada yg dipilih
+        document.getElementById('importTerpilihBtn').disabled = !(isSekolahSelected && hasSelection);
+        
+        // Tombol Batal diatur oleh monitorProgress
     }
-    
-    function getSelectedIds() {
-        return Array.from(document.querySelectorAll('.row-checkbox:checked')).map(cb => cb.value);
+    function updateDataCount() { document.getElementById('dataCount').textContent = document.querySelectorAll('#tableBody .row-checkbox').length; }
+    function updateSelectedCount() { document.getElementById('selectedCount').textContent = document.querySelectorAll('.row-checkbox:checked').length; }
+    function updateSelectAllState() {
+        const total = document.querySelectorAll('.row-checkbox').length;
+        const checked = document.querySelectorAll('.row-checkbox:checked').length;
+        const selectAll = document.getElementById('selectAll');
+        if (total === 0) { selectAll.indeterminate = false; selectAll.checked = false; }
+        else if (checked === 0) { selectAll.indeterminate = false; selectAll.checked = false; }
+        else if (checked === total) { selectAll.indeterminate = false; selectAll.checked = true; }
+        else { selectAll.indeterminate = true; }
     }
-    
-    function showLoadingModal(title = 'Memproses...', detail = 'Mohon tunggu sebentar') {
+    function getSelectedIds() { return Array.from(document.querySelectorAll('.row-checkbox:checked')).map(cb => cb.value); }
+    function showLoadingModal(title = 'Memproses...', detail = 'Mohon tunggu') {
         document.getElementById('loadingText').textContent = title;
         document.getElementById('loadingDetail').textContent = detail;
         loadingModalInstance.show();
     }
-    
-    function hideLoadingModal() {
-        loadingModalInstance.hide();
-    }
-    
+    function hideLoadingModal() { loadingModalInstance.hide(); }
     function updateLoadingModal(title, detail) {
         if (title) document.getElementById('loadingText').textContent = title;
         if (detail) document.getElementById('loadingDetail').textContent = detail;
     }
-    
     function escapeHtml(text) {
         if(typeof text !== 'string') return '';
         const map = {'&': '&amp;','<': '&lt;','>': '&gt;','"': '&quot;',"'": '&#039;'};
         return text.replace(/[&<>"']/g, function(m) { return map[m]; });
     }
+     function filterKecamatanDropdown(selectedKabId) {
+        const kecamatanSelect = document.getElementById('kecamatanFilter');
+        const currentKecValue = kecamatanSelect.value;
+        kecamatanSelect.innerHTML = '<option value="">Pilih Kecamatan...</option><option value="semua">-- Semua Kecamatan --</option>';
+        allKecamatanOptions.forEach(option => {
+            const kabIdForKec = option.getAttribute('data-kabupaten-id');
+            if (selectedKabId === 'semua' || kabIdForKec === selectedKabId || !selectedKabId) {
+                kecamatanSelect.appendChild(option.cloneNode(true));
+            }
+        });
+        kecamatanSelect.value = currentKecValue; // Coba set nilai lama
+    }
+     function updateRemoveButtons() {
+        const urlGroups = document.querySelectorAll('.url-input-group');
+        urlGroups.forEach(group => {
+            const removeBtn = group.querySelector('.remove-url');
+            removeBtn.style.display = (urlGroups.length > 1) ? 'block' : 'none';
+        });
+    }
+     function renumberUrlGroups() {
+        const urlGroups = document.querySelectorAll('.url-input-group');
+        urlCounter = 0;
+        urlGroups.forEach((group, index) => {
+            urlCounter++; const newIndex = index + 1;
+            group.setAttribute('data-index', newIndex);
+            group.querySelector('label').textContent = `URL Sekolah #${newIndex}`;
+            group.querySelector('input[type="url"]').name = `urls[${newIndex}][url]`;
+            group.querySelector('input[type="text"]').name = `urls[${newIndex}][description]`;
+        });
+    }
+     function uploadUrls(urls, index) { // Fungsi rekursif untuk upload manual
+        if (index >= urls.length) {
+            document.getElementById('uploadProgress').style.display = 'none';
+            document.getElementById('submitBtn').disabled = false;
+            document.getElementById('urlForm').reset();
+            urlCounter = 1; document.getElementById('urlContainer').innerHTML = `<div class="url-input-group mb-3" data-index="1"><label class="form-label small">URL Sekolah #1</label><div class="input-group"><input type="url" name="urls[1][url]" class="form-control form-control-sm" placeholder="URL Lengkap Sekolah" required><button type="button" class="btn btn-danger btn-sm remove-url" style="display: none;"><i class="fas fa-trash"></i></button></div><input type="text" name="urls[1][description]" class="form-control form-control-sm mt-1" placeholder="Nama sekolah (opsional)"></div>`;
+            iziToast.success({ title: 'Sukses', message: `${urls.length} URL diupload.`, position: 'topCenter'});
+            setTimeout(() => window.location.reload(), 2000);
+            return;
+        }
+        const url = urls[index]; const progress = Math.round(((index + 1) / urls.length) * 100);
+        document.getElementById('uploadProgressBar').style.width = progress + '%';
+        document.getElementById('uploadStatusText').textContent = `Upload ${index + 1}/${urls.length}: ${url.description || url.url}`;
+        
+        fetch('import_handler.php', { // Ganti dengan endpoint PHP Anda untuk menambah URL
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'add_manual_url', url: url.url, description: url.description, user_id: 1 }) // Sesuaikan action & payload
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) { setTimeout(() => uploadUrls(urls, index + 1), 300); } // Jeda sedikit
+            else { document.getElementById('uploadProgress').style.display = 'none'; document.getElementById('submitBtn').disabled = false; iziToast.error({ title: 'Error', message: `Gagal upload URL ${index + 1}: ${data.message}`, position: 'topCenter'}); }
+        })
+        .catch(error => { document.getElementById('uploadProgress').style.display = 'none'; document.getElementById('submitBtn').disabled = false; iziToast.error({ title: 'Error', message: `Error upload URL ${index + 1}: ${error.message}`, position: 'topCenter'}); });
+    }
     
-    // Initialize
+    // --- INISIALISASI ---
     updateButtonStates();
     updateDataCount();
     updateSelectedCount();
+    // Jika URL Induk sudah ada, otomatis muat data kabupaten saat halaman dibuka
+    if (currentUrlIndukId) {
+         document.getElementById('filterData').value = 'kabupaten';
+         currentDataType = 'kabupaten';
+         loadTableData('kabupaten');
+    }
 });
 </script>
 
 <?php
 require_once '../layout/_bottom.php';
-?>  
+?>

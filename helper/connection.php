@@ -3,16 +3,16 @@
 date_default_timezone_set("Asia/Jakarta");
 
 // Parsing file config.ini
-$config = parse_ini_file('config.ini', true);
+ $config = parse_ini_file('config.ini', true);
 
 // Mengambil detail koneksi dari array hasil parsing
-$host = $config['database']['host'];
-$user = $config['database']['username'];
-$pass = $config['database']['password'];
-$db = $config['database']['database'];
+ $host = $config['database']['host'];
+ $user = $config['database']['username'];
+ $pass = $config['database']['password'];
+ $db = $config['database']['database'];
 
 // Membuat koneksi ke database
-$connection = mysqli_connect($host, $user, $pass, $db);
+ $connection = mysqli_connect($host, $user, $pass, $db);
 
 // Memeriksa koneksi
 if (mysqli_connect_errno()) {

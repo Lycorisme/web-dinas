@@ -1,0 +1,14 @@
+[2025-10-30 05:26:42] === EXECUTING MAIN SCRAPER ===
+Batch File: C:\Windows\Temp\run_main_scraper_1761776802_3455.bat
+Command: start /B cmd /C "C:\Windows\Temp\run_main_scraper_1761776802_3455.bat"
+Args: "--log_id=33" "--user_id=1" "--driver_path=C:\laragon\www\dapokalsel\driver\chromedriver.exe"
+Batch Content:
+@echo off
+echo Activating venv... >> "C:\laragon\www\dapokalsel\log_main_scraper_output.log" 2>&1
+call "C:\laragon\www\dapokalsel\venv\Scripts\activate.bat" >> "C:\laragon\www\dapokalsel\log_main_scraper_output.log" 2>&1
+echo Running script... >> "C:\laragon\www\dapokalsel\log_main_scraper_output.log" 2>&1
+cd /d "C:\laragon\www\dapokalsel"
+"C:\laragon\www\dapokalsel\venv\Scripts\python.exe" "main_scraper.pyw" "--log_id=33" "--user_id=1" "--driver_path=C:\laragon\www\dapokalsel\driver\chromedriver.exe" >> "C:\laragon\www\dapokalsel\log_main_scraper_output.log" 2>&1
+echo Script finished. >> "C:\laragon\www\dapokalsel\log_main_scraper_output.log" 2>&1
+
+================================

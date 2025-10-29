@@ -1,0 +1,128 @@
+2025-10-30 05:20:41,053 - INFO - ================================================================================
+2025-10-30 05:20:41,054 - INFO - >>> [REFACTOR] import_url_kabupaten.pyw dimulai <<<
+2025-10-30 05:20:41,054 - INFO - Arguments: ['sekolah\\import_url_kabupaten.pyw', '--url_induk_id=9', '--user_id=1', '--max_retries=300', '--driver_path=C:\\laragon\\www\\dapokalsel\\driver\\chromedriver.exe', '--log_id=314']
+2025-10-30 05:20:41,957 - INFO - \u2713 Library & Helper berhasil diimport
+2025-10-30 05:20:41,959 - INFO - Parsed arguments:
+2025-10-30 05:20:41,959 - INFO -   - url_induk_id: 9
+2025-10-30 05:20:41,960 - INFO -   - driver_path: C:\laragon\www\dapokalsel\driver\chromedriver.exe
+2025-10-30 05:20:41,960 - INFO -   - log_id: 314
+2025-10-30 05:20:41,965 - INFO - \u2713 Koneksi database (pymysql) berhasil
+2025-10-30 05:20:41,966 - INFO - \u2713 URL Induk ditemukan: https://dapo.kemendikdasmen.go.id/sp/1/150000
+2025-10-30 05:20:41,966 - INFO - ==================================================
+2025-10-30 05:20:41,966 - INFO - \U0001f680 Memulai Setup Driver Selenium (v3 - Robust Options)...
+2025-10-30 05:20:41,966 - INFO - Mencoba membersihkan proses chromedriver lama...
+2025-10-30 05:20:42,499 - INFO - \u2713 User Data Dir: C:\laragon\www\dapokalsel\temp\chrome_profile
+2025-10-30 05:20:42,499 - INFO - \u2713 Driver Path: C:\laragon\www\dapokalsel\driver\chromedriver.exe
+2025-10-30 05:20:42,499 - INFO - Mencari chrome.exe...
+2025-10-30 05:20:42,499 - INFO - \u2713 chrome.exe ditemukan di: C:\Program Files\Google\Chrome\Application\chrome.exe
+2025-10-30 05:20:42,500 - INFO - \u2713 Binary Location diset ke: C:\Program Files\Google\Chrome\Application\chrome.exe
+2025-10-30 05:20:42,500 - INFO - Mencoba inisialisasi uc.Chrome()...
+2025-10-30 05:20:56,914 - INFO - \u2713 Driver Selenium berhasil diinisialisasi (Attempt 1).
+2025-10-30 05:20:57,276 - INFO - ==================================================
+2025-10-30 05:20:57,277 - INFO - Attempt 1/300: Fetching https://dapo.kemendikdasmen.go.id/sp/1/150000
+2025-10-30 05:21:10,483 - INFO - Page loaded. Content Length: 35036
+2025-10-30 05:21:10,484 - INFO - Total rows found: 13
+2025-10-30 05:21:10,485 - INFO -   \u2713 Found: Kab. Banjar (Kode: 150100)
+2025-10-30 05:21:10,485 - INFO -   \u2713 Found: Kota Banjarmasin (Kode: 156000)
+2025-10-30 05:21:10,485 - INFO -   \u2713 Found: Kab. Barito Kuala (Kode: 150300)
+2025-10-30 05:21:10,485 - INFO -   \u2713 Found: Kab. Kotabaru (Kode: 150900)
+2025-10-30 05:21:10,486 - INFO -   \u2713 Found: Kab. Tanah Laut (Kode: 150200)
+2025-10-30 05:21:10,486 - INFO -   \u2713 Found: Kab. Tanah Bumbu (Kode: 151100)
+2025-10-30 05:21:10,486 - INFO -   \u2713 Found: Kab. Tabalong (Kode: 150800)
+2025-10-30 05:21:10,486 - INFO -   \u2713 Found: Kab. Hulu Sungai Tengah (Kode: 150600)
+2025-10-30 05:21:10,486 - INFO -   \u2713 Found: Kab. Hulu Sungai Selatan (Kode: 150500)
+2025-10-30 05:21:10,487 - INFO -   \u2713 Found: Kab. Hulu Sungai Utara (Kode: 150700)
+2025-10-30 05:21:10,487 - INFO -   \u2713 Found: Kab. Balangan (Kode: 151000)
+2025-10-30 05:21:10,487 - INFO -   \u2713 Found: Kota Banjarbaru (Kode: 156100)
+2025-10-30 05:21:10,487 - INFO -   \u2713 Found: Kab. Tapin (Kode: 150400)
+2025-10-30 05:21:10,487 - INFO - \u2713 Berhasil scraping 13 kabupaten
+2025-10-30 05:21:10,487 - INFO - Menyimpan 13 data ke database...
+2025-10-30 05:21:10,489 - INFO - \u2713 Koneksi database (pymysql) berhasil
+2025-10-30 05:21:10,490 - INFO -   \u2713 Inserted: Kab. Banjar
+2025-10-30 05:21:10,505 - INFO -   \u2713 Inserted: Kota Banjarmasin
+2025-10-30 05:21:10,539 - INFO -   \u2713 Inserted: Kab. Barito Kuala
+2025-10-30 05:21:10,552 - INFO -   \u2713 Inserted: Kab. Kotabaru
+2025-10-30 05:21:10,564 - INFO -   \u2713 Inserted: Kab. Tanah Laut
+2025-10-30 05:21:10,575 - INFO -   \u2713 Inserted: Kab. Tanah Bumbu
+2025-10-30 05:21:10,586 - INFO -   \u2713 Inserted: Kab. Tabalong
+2025-10-30 05:21:10,598 - INFO -   \u2713 Inserted: Kab. Hulu Sungai Tengah
+2025-10-30 05:21:10,610 - INFO -   \u2713 Inserted: Kab. Hulu Sungai Selatan
+2025-10-30 05:21:10,620 - INFO -   \u2713 Inserted: Kab. Hulu Sungai Utara
+2025-10-30 05:21:10,631 - INFO -   \u2713 Inserted: Kab. Balangan
+2025-10-30 05:21:10,646 - INFO -   \u2713 Inserted: Kota Banjarbaru
+2025-10-30 05:21:10,655 - INFO -   \u2713 Inserted: Kab. Tapin
+2025-10-30 05:21:10,672 - INFO - \u2713 Koneksi database (pymysql) berhasil
+2025-10-30 05:21:10,687 - INFO - \u2713 Log import_log ID 314 diperbarui: status=completed
+2025-10-30 05:21:10,687 - INFO - ================================================================================
+2025-10-30 05:21:10,687 - INFO - PROSES KABUPATEN SELESAI
+2025-10-30 05:21:10,687 - INFO - Total Ditemukan: 13
+2025-10-30 05:21:10,688 - INFO - Sukses Simpan: 13
+2025-10-30 05:21:10,688 - INFO - Gagal Simpan: 0
+2025-10-30 05:21:10,688 - INFO - ================================================================================
+2025-10-30 05:21:10,689 - INFO - \u2713 Driver Selenium ditutup
+2025-10-30 05:21:10,690 - INFO - >>> Script kabupaten selesai <<<
+2025-10-30 05:21:10,764 - INFO - ensuring close
+2025-10-30 05:22:44,331 - INFO - ================================================================================
+2025-10-30 05:22:44,331 - INFO - >>> [REFACTOR] import_url_kabupaten.pyw dimulai <<<
+2025-10-30 05:22:44,332 - INFO - Arguments: ['sekolah\\import_url_kabupaten.pyw', '--url_induk_id=9', '--user_id=1', '--max_retries=300', '--driver_path=C:\\laragon\\www\\dapokalsel\\driver\\chromedriver.exe', '--log_id=319']
+2025-10-30 05:22:45,772 - INFO - \u2713 Library & Helper berhasil diimport
+2025-10-30 05:22:45,774 - INFO - Parsed arguments:
+2025-10-30 05:22:45,774 - INFO -   - url_induk_id: 9
+2025-10-30 05:22:45,774 - INFO -   - driver_path: C:\laragon\www\dapokalsel\driver\chromedriver.exe
+2025-10-30 05:22:45,774 - INFO -   - log_id: 319
+2025-10-30 05:22:45,779 - INFO - \u2713 Koneksi database (pymysql) berhasil
+2025-10-30 05:22:45,780 - INFO - \u2713 URL Induk ditemukan: https://dapo.kemendikdasmen.go.id/sp/1/150000
+2025-10-30 05:22:45,780 - INFO - ==================================================
+2025-10-30 05:22:45,780 - INFO - \U0001f680 Memulai Setup Driver Selenium (v2)...
+2025-10-30 05:22:45,781 - INFO - \u2713 User Data Dir: C:\laragon\www\dapokalsel\temp\chrome_profile
+2025-10-30 05:22:45,781 - INFO - \u2713 Driver Path: C:\laragon\www\dapokalsel\driver\chromedriver.exe
+2025-10-30 05:22:45,781 - INFO - Mencari chrome.exe...
+2025-10-30 05:22:45,781 - INFO - \u2713 chrome.exe ditemukan di: C:\Program Files\Google\Chrome\Application\chrome.exe
+2025-10-30 05:22:45,781 - INFO - \u2713 Binary Location diset ke: C:\Program Files\Google\Chrome\Application\chrome.exe
+2025-10-30 05:22:45,805 - WARNING - could not detect version_main.therefore, we are assuming it is chrome 108 or higher
+2025-10-30 05:22:47,584 - INFO - setting properties for headless
+2025-10-30 05:22:47,602 - INFO - \u2713 Driver Selenium berhasil diinisialisasi.
+2025-10-30 05:22:47,603 - INFO - ==================================================
+2025-10-30 05:22:47,603 - INFO - Attempt 1/300: Fetching https://dapo.kemendikdasmen.go.id/sp/1/150000
+2025-10-30 05:22:51,045 - INFO - Page loaded. Content Length: 35035
+2025-10-30 05:22:51,047 - INFO - Total rows found: 13
+2025-10-30 05:22:51,048 - INFO -   \u2713 Found: Kab. Banjar (Kode: 150100)
+2025-10-30 05:22:51,048 - INFO -   \u2713 Found: Kota Banjarmasin (Kode: 156000)
+2025-10-30 05:22:51,048 - INFO -   \u2713 Found: Kab. Barito Kuala (Kode: 150300)
+2025-10-30 05:22:51,048 - INFO -   \u2713 Found: Kab. Kotabaru (Kode: 150900)
+2025-10-30 05:22:51,048 - INFO -   \u2713 Found: Kab. Tanah Laut (Kode: 150200)
+2025-10-30 05:22:51,049 - INFO -   \u2713 Found: Kab. Tanah Bumbu (Kode: 151100)
+2025-10-30 05:22:51,049 - INFO -   \u2713 Found: Kab. Tabalong (Kode: 150800)
+2025-10-30 05:22:51,049 - INFO -   \u2713 Found: Kab. Hulu Sungai Tengah (Kode: 150600)
+2025-10-30 05:22:51,049 - INFO -   \u2713 Found: Kab. Hulu Sungai Selatan (Kode: 150500)
+2025-10-30 05:22:51,050 - INFO -   \u2713 Found: Kab. Hulu Sungai Utara (Kode: 150700)
+2025-10-30 05:22:51,050 - INFO -   \u2713 Found: Kab. Balangan (Kode: 151000)
+2025-10-30 05:22:51,050 - INFO -   \u2713 Found: Kota Banjarbaru (Kode: 156100)
+2025-10-30 05:22:51,051 - INFO -   \u2713 Found: Kab. Tapin (Kode: 150400)
+2025-10-30 05:22:51,051 - INFO - \u2713 Berhasil scraping 13 kabupaten
+2025-10-30 05:22:51,051 - INFO - Menyimpan 13 data ke database...
+2025-10-30 05:22:51,053 - INFO - \u2713 Koneksi database (pymysql) berhasil
+2025-10-30 05:22:51,056 - INFO -   \u21bb Updated: Kab. Banjar
+2025-10-30 05:22:51,075 - INFO -   \u21bb Updated: Kota Banjarmasin
+2025-10-30 05:22:51,095 - INFO -   \u21bb Updated: Kab. Barito Kuala
+2025-10-30 05:22:51,108 - INFO -   \u21bb Updated: Kab. Kotabaru
+2025-10-30 05:22:51,129 - INFO -   \u21bb Updated: Kab. Tanah Laut
+2025-10-30 05:22:51,140 - INFO -   \u21bb Updated: Kab. Tanah Bumbu
+2025-10-30 05:22:51,151 - INFO -   \u21bb Updated: Kab. Tabalong
+2025-10-30 05:22:51,162 - INFO -   \u21bb Updated: Kab. Hulu Sungai Tengah
+2025-10-30 05:22:51,173 - INFO -   \u21bb Updated: Kab. Hulu Sungai Selatan
+2025-10-30 05:22:51,188 - INFO -   \u21bb Updated: Kab. Hulu Sungai Utara
+2025-10-30 05:22:51,198 - INFO -   \u21bb Updated: Kab. Balangan
+2025-10-30 05:22:51,210 - INFO -   \u21bb Updated: Kota Banjarbaru
+2025-10-30 05:22:51,220 - INFO -   \u21bb Updated: Kab. Tapin
+2025-10-30 05:22:51,235 - INFO - \u2713 Koneksi database (pymysql) berhasil
+2025-10-30 05:22:51,241 - INFO - \u2713 Log import_log ID 319 diperbarui: status=completed
+2025-10-30 05:22:51,241 - INFO - ================================================================================
+2025-10-30 05:22:51,241 - INFO - PROSES KABUPATEN SELESAI
+2025-10-30 05:22:51,242 - INFO - Total Ditemukan: 13
+2025-10-30 05:22:51,242 - INFO - Sukses Simpan: 13
+2025-10-30 05:22:51,242 - INFO - Gagal Simpan: 0
+2025-10-30 05:22:51,242 - INFO - ================================================================================
+2025-10-30 05:22:51,243 - INFO - \u2713 Driver Selenium ditutup
+2025-10-30 05:22:51,243 - INFO - >>> Script kabupaten selesai <<<
+2025-10-30 05:22:51,244 - INFO - ensuring close

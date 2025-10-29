@@ -1,0 +1,59 @@
+2025-10-30 05:23:00,624 - INFO - ================================================================================
+2025-10-30 05:23:00,624 - INFO - >>> [ROMBAK TOTAL] import_url_kecamatan.pyw dimulai <<<
+2025-10-30 05:23:00,624 - INFO - Arguments: ['sekolah\\import_url_kecamatan.pyw', '--kabupaten_id=100', '--user_id=1', '--max_retries=300', '--driver_path=C:\\laragon\\www\\dapokalsel\\driver\\chromedriver.exe', '--log_id=320']
+2025-10-30 05:23:01,583 - INFO - \u2713 Library & Helper berhasil diimport
+2025-10-30 05:23:01,584 - INFO - Parsed arguments:
+2025-10-30 05:23:01,584 - INFO -   - kabupaten_id: 100
+2025-10-30 05:23:01,666 - INFO -   - driver_path: C:\laragon\www\dapokalsel\driver\chromedriver.exe
+2025-10-30 05:23:01,666 - INFO -   - log_id: 320
+2025-10-30 05:23:01,676 - INFO - \u2713 Koneksi database (pymysql) berhasil
+2025-10-30 05:23:01,676 - INFO - \u2713 Ditemukan 1 kabupaten untuk diproses
+2025-10-30 05:23:01,679 - INFO - \u2713 Koneksi database (pymysql) berhasil
+2025-10-30 05:23:01,700 - INFO - \u2713 Log import_log ID 320 diperbarui: status=running
+2025-10-30 05:23:01,701 - INFO - ==================================================
+2025-10-30 05:23:01,701 - INFO - \U0001f680 Memulai Setup Driver Selenium (v2)...
+2025-10-30 05:23:01,703 - INFO - \u2713 User Data Dir: C:\laragon\www\dapokalsel\temp\chrome_profile
+2025-10-30 05:23:01,704 - INFO - \u2713 Driver Path: C:\laragon\www\dapokalsel\driver\chromedriver.exe
+2025-10-30 05:23:01,704 - INFO - Mencari chrome.exe...
+2025-10-30 05:23:01,704 - INFO - \u2713 chrome.exe ditemukan di: C:\Program Files\Google\Chrome\Application\chrome.exe
+2025-10-30 05:23:01,705 - INFO - \u2713 Binary Location diset ke: C:\Program Files\Google\Chrome\Application\chrome.exe
+2025-10-30 05:23:01,735 - WARNING - could not detect version_main.therefore, we are assuming it is chrome 108 or higher
+2025-10-30 05:23:03,119 - INFO - setting properties for headless
+2025-10-30 05:23:03,144 - INFO - \u2713 Driver Selenium berhasil diinisialisasi.
+2025-10-30 05:23:03,144 - INFO - ==================================================
+2025-10-30 05:23:03,145 - INFO - --- Memulai scraping untuk Kab. Balangan ---
+2025-10-30 05:23:03,145 - INFO - Attempt 1/300 untuk Kab. Balangan...
+2025-10-30 05:23:05,880 - INFO - Ditemukan 8 baris data (calon kecamatan)
+2025-10-30 05:23:05,881 - INFO -   \u2713 Found: Kec. Halong (Kode: 151006)
+2025-10-30 05:23:05,882 - INFO -   \u2713 Found: Kec. Lampihong (Kode: 151001)
+2025-10-30 05:23:05,882 - INFO -   \u2713 Found: Kec. Paringin Selatan (Kode: 151008)
+2025-10-30 05:23:05,883 - INFO -   \u2713 Found: Kec. Batu Mandi (Kode: 151002)
+2025-10-30 05:23:05,883 - INFO -   \u2713 Found: Kec. Awayan (Kode: 151003)
+2025-10-30 05:23:05,884 - INFO -   \u2713 Found: Kec. Paringin (Kode: 151004)
+2025-10-30 05:23:05,884 - INFO -   \u2713 Found: Kec. Juai (Kode: 151005)
+2025-10-30 05:23:05,884 - INFO -   \u2713 Found: Kec. Tebing Tinggi (Kode: 151007)
+2025-10-30 05:23:05,884 - INFO - \u2713 Berhasil scraping 8 kecamatan dari Kab. Balangan
+2025-10-30 05:23:05,885 - INFO - Menyimpan 8 kecamatan untuk Kab. Balangan...
+2025-10-30 05:23:05,889 - INFO - \u2713 Koneksi database (pymysql) berhasil
+2025-10-30 05:23:05,890 - INFO -   \u2713 Inserted: Kec. Halong
+2025-10-30 05:23:05,918 - INFO -   \u2713 Inserted: Kec. Lampihong
+2025-10-30 05:23:05,951 - INFO -   \u2713 Inserted: Kec. Paringin Selatan
+2025-10-30 05:23:05,965 - INFO -   \u2713 Inserted: Kec. Batu Mandi
+2025-10-30 05:23:05,976 - INFO -   \u2713 Inserted: Kec. Awayan
+2025-10-30 05:23:06,010 - INFO -   \u2713 Inserted: Kec. Paringin
+2025-10-30 05:23:06,021 - INFO -   \u2713 Inserted: Kec. Juai
+2025-10-30 05:23:06,033 - INFO -   \u2713 Inserted: Kec. Tebing Tinggi
+2025-10-30 05:23:06,046 - INFO - \u2713 Koneksi database (pymysql) berhasil
+2025-10-30 05:23:06,076 - INFO - \u2713 Log import_log ID 320 diperbarui: status=running
+2025-10-30 05:23:06,079 - INFO - \u2713 Koneksi database (pymysql) berhasil
+2025-10-30 05:23:06,133 - INFO - \u2713 Log import_log ID 320 diperbarui: status=completed
+2025-10-30 05:23:06,133 - INFO - ================================================================================
+2025-10-30 05:23:06,134 - INFO - PROSES KECAMATAN SELESAI
+2025-10-30 05:23:06,134 - INFO - Total Kabupaten Diproses: 1
+2025-10-30 05:23:06,134 - INFO - Kabupaten Sukses: 1
+2025-10-30 05:23:06,134 - INFO - Kabupaten Gagal: 0
+2025-10-30 05:23:06,134 - INFO - Total Kecamatan Disimpan: 8
+2025-10-30 05:23:06,134 - INFO - ================================================================================
+2025-10-30 05:23:06,135 - INFO - \u2713 Driver Selenium ditutup
+2025-10-30 05:23:06,135 - INFO - >>> Script kecamatan selesai <<<
+2025-10-30 05:23:06,137 - INFO - ensuring close

@@ -1,0 +1,36 @@
+[2025-10-30 05:20:34] === EXECUTING COMMAND ===
+Batch File: C:\Windows\Temp\run_dapo_scraper_1761776434_3964.bat
+Command: start /B cmd /C "C:\Windows\Temp\run_dapo_scraper_1761776434_3964.bat"
+Batch Content:
+@echo off
+cd /d "C:\laragon\www\dapokalsel"
+"C:\laragon\www\dapokalsel\venv\Scripts\python.exe" "sekolah\import_url_kabupaten.pyw" "--url_induk_id=9" "--user_id=1" "--max_retries=300" "--driver_path=C:\laragon\www\dapokalsel\driver\chromedriver.exe" "--log_id=318" >> "C:\laragon\www\dapokalsel\log_python_output.log" 2>&1
+
+================================
+[2025-10-30 05:22:43] === EXECUTING COMMAND ===
+Batch File: C:\Windows\Temp\run_dapo_scraper_1761776563_9778.bat
+Command: start /B cmd /C "C:\Windows\Temp\run_dapo_scraper_1761776563_9778.bat"
+Batch Content:
+@echo off
+cd /d "C:\laragon\www\dapokalsel"
+"C:\laragon\www\dapokalsel\venv\Scripts\python.exe" "sekolah\import_url_kabupaten.pyw" "--url_induk_id=9" "--user_id=1" "--max_retries=300" "--driver_path=C:\laragon\www\dapokalsel\driver\chromedriver.exe" "--log_id=319" >> "C:\laragon\www\dapokalsel\log_python_output.log" 2>&1
+
+================================
+[2025-10-30 05:23:00] === EXECUTING COMMAND ===
+Batch File: C:\Windows\Temp\run_dapo_scraper_1761776580_2578.bat
+Command: start /B cmd /C "C:\Windows\Temp\run_dapo_scraper_1761776580_2578.bat"
+Batch Content:
+@echo off
+cd /d "C:\laragon\www\dapokalsel"
+"C:\laragon\www\dapokalsel\venv\Scripts\python.exe" "sekolah\import_url_kecamatan.pyw" "--kabupaten_id=100" "--user_id=1" "--max_retries=300" "--driver_path=C:\laragon\www\dapokalsel\driver\chromedriver.exe" "--log_id=320" >> "C:\laragon\www\dapokalsel\log_python_output.log" 2>&1
+
+================================
+[2025-10-30 05:23:18] === EXECUTING COMMAND ===
+Batch File: C:\Windows\Temp\run_dapo_scraper_1761776598_6328.bat
+Command: start /B cmd /C "C:\Windows\Temp\run_dapo_scraper_1761776598_6328.bat"
+Batch Content:
+@echo off
+cd /d "C:\laragon\www\dapokalsel"
+"C:\laragon\www\dapokalsel\venv\Scripts\python.exe" "sekolah\import_url_sekolah.pyw" "--kecamatan_id=168" "--user_id=1" "--max_retries=300" "--driver_path=C:\laragon\www\dapokalsel\driver\chromedriver.exe" "--log_id=321" >> "C:\laragon\www\dapokalsel\log_python_output.log" 2>&1
+
+================================

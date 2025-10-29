@@ -1,204 +1,204 @@
 <?php
-// FILE: sekolah/run_scraper.php
+// FILE: sekolah/run_scraper.php - VERSI REFACTOR (Konsisten v4 - Fix Venv & SQL)
 header('Content-Type: application/json; charset=utf-8');
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
-
-// Set timeout yang lebih pendek untuk response ke browser
-set_time_limit(30);
+set_time_limit(30); 
 ini_set('max_execution_time', 30);
 
-require_once '../helper/connection.php';
+require_once '../helper/connection.php'; // Path ke koneksi DB
 
-// Mulai session dan cek user_id
+// --- Fungsi Helper dari import_handler.php (disalin) ---
+function getPythonPath() {
+    $venvPath = __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR .
+                'venv' . DIRECTORY_SEPARATOR . 'Scripts' . DIRECTORY_SEPARATOR . 'python.exe';
+    if (file_exists($venvPath)) return realpath($venvPath);
+    return 'python'; // Fallback
+}
+
+function getChromeDriverPath() {
+    $driverPath = __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR .
+                  'driver' . DIRECTORY_SEPARATOR . 'chromedriver.exe';
+    if (file_exists($driverPath)) return realpath($driverPath);
+    return null;
+}
+
+function executeBackgroundCommand($pythonPath, $scriptRelativePath, $args) { 
+    if (strtoupper(substr(PHP_OS, 0, 3)) !== 'WIN') {
+        throw new Exception("Metode eksekusi ini hanya untuk Windows.");
+    }
+    $projectRoot = realpath(__DIR__ . '/..');
+    $scriptAbsolutePath = $projectRoot . DIRECTORY_SEPARATOR . $scriptRelativePath;
+    if (!file_exists($scriptAbsolutePath)) {
+         throw new Exception("Script Python tidak ditemukan di: " . $scriptAbsolutePath);
+    }
+
+    $batchFile = sys_get_temp_dir() . '\\run_main_scraper_' . time() . '_' . rand(1000,9999) . '.bat';
+    $logOutput = $projectRoot . '\\log_main_scraper_output.log'; 
+    $cmdArgs = [];
+    foreach ($args as $arg) { $cmdArgs[] = escapeshellarg($arg); }
+    $argString = implode(' ', $cmdArgs);
+    
+    // === PERBAIKAN VENV DI SINI ===
+    $batchContent = "@echo off\n";
+    $batchContent .= "echo Activating venv... >> \"$logOutput\" 2>&1\n";
+    $venvActivateScript = realpath($projectRoot . '\\venv\\Scripts\\activate.bat'); 
+    if ($venvActivateScript) {
+        $batchContent .= "call \"$venvActivateScript\" >> \"$logOutput\" 2>&1\n"; // Gunakan 'call'
+    } else {
+        $batchContent .= "echo WARNING: venv activate script not found! >> \"$logOutput\" 2>&1\n";
+    }
+    $batchContent .= "echo Running script... >> \"$logOutput\" 2>&1\n";
+    $batchContent .= "cd /d \"$projectRoot\"\n"; 
+    $batchContent .= "\"$pythonPath\" \"$scriptRelativePath\" $argString >> \"$logOutput\" 2>&1\n"; 
+    $batchContent .= "echo Script finished. >> \"$logOutput\" 2>&1\n"; 
+    // === AKHIR PERBAIKAN VENV ===
+    
+    if (file_put_contents($batchFile, $batchContent) === false) {
+        throw new Exception("Gagal membuat file batch sementara.");
+    }
+    $exec = "start /B cmd /C \"$batchFile\"";
+
+    $logFile = $projectRoot . '\\log_php_exec_main.log'; 
+    $logContent = date('[Y-m-d H:i:s] ') . "=== EXECUTING MAIN SCRAPER ===" . PHP_EOL;
+    $logContent .= "Batch File: $batchFile" . PHP_EOL;
+    $logContent .= "Command: $exec" . PHP_EOL;
+    $logContent .= "Args: " . $argString . PHP_EOL; 
+    $logContent .= "Batch Content:" . PHP_EOL . $batchContent . PHP_EOL;
+    $logContent .= "================================" . PHP_EOL;
+    file_put_contents($logFile, $logContent, FILE_APPEND);
+
+    pclose(popen($exec, "r"));
+    sleep(2);
+    return true;
+}
+// --- Akhir Fungsi Helper ---
+
+
 session_start();
 if (!isset($_SESSION['login']['id'])) {
-    echo json_encode([
-        'success' => false,
-        'message' => 'Sesi tidak valid. Silakan login kembali.'
-    ]);
+    echo json_encode(['success' => false, 'message' => 'Sesi tidak valid.']);
     exit();
 }
 $user_id = $_SESSION['login']['id'];
 
-$response = ['success' => false, 'message' => 'Terjadi kesalahan tidak diketahui.'];
-$logId = 0;
+$response = ['success' => false, 'message' => 'Terjadi kesalahan.'];
+$logId = 0; 
 
 try {
-    // 1. Pastikan koneksi DB valid
     if (!isset($connection) || !$connection instanceof mysqli) {
         throw new Exception('Koneksi database tidak valid.');
     }
 
-    // 2. Baca input JSON dari browser
     $input = json_decode(file_get_contents('php://input'), true);
     if (json_last_error() !== JSON_ERROR_NONE) {
         throw new Exception('Input JSON tidak valid: ' . json_last_error_msg());
     }
 
-    $mode = $input['mode'] ?? 'all';
-    $selectedUrlIds = $input['urls'] ?? [];
+    $mode = $input['mode'] ?? 'all'; 
+    $selectedUrlIds = $input['urls'] ?? []; 
 
-    // 3. Validasi dan tentukan ID URL yang akan diproses
     $urlIdsToProcess = [];
     $batchName = '';
 
     if ($mode === 'selected' && !empty($selectedUrlIds)) {
-        // Ambil URL pilihan (global, tanpa user_id)
+        $selectedUrlIds = array_filter(array_map('intval', $selectedUrlIds));
+        if (empty($selectedUrlIds)) throw new Exception('Tidak ada ID URL valid yang dipilih.');
+        
         $placeholders = implode(',', array_fill(0, count($selectedUrlIds), '?'));
         $stmt = $connection->prepare("SELECT id FROM scraping_urls WHERE id IN ($placeholders) AND status = 'active'");
+        if(!$stmt) throw new Exception("Prepare statement gagal: ".$connection->error);
         $types = str_repeat('i', count($selectedUrlIds));
-        $params = array_map('intval', $selectedUrlIds);
-        $stmt->bind_param($types, ...$params);
+        $stmt->bind_param($types, ...$selectedUrlIds);
         $stmt->execute();
         $result = $stmt->get_result();
-
-        while ($row = $result->fetch_assoc()) {
-            $urlIdsToProcess[] = $row['id'];
-        }
+        while($row = $result->fetch_assoc()){ $urlIdsToProcess[] = $row['id']; }
         $stmt->close();
-
-        if (empty($urlIdsToProcess)) {
-            throw new Exception('Tidak ada URL yang dipilih yang valid atau aktif.');
-        }
-
+        
+        if (empty($urlIdsToProcess)) throw new Exception('ID URL yang dipilih tidak ditemukan atau tidak aktif.');
         $batchName = 'Update Pilihan - ' . count($urlIdsToProcess) . ' URL';
-
-    } else {
-        // Ambil semua URL aktif (global, tanpa user_id)
-        $result = $connection->query("SELECT id FROM scraping_urls WHERE status = 'active' LIMIT 100");
-        if (!$result) {
-            throw new Exception('Gagal mengambil URL dari database: ' . $connection->error);
-        }
-
-        while ($row = $result->fetch_assoc()) {
-            $urlIdsToProcess[] = $row['id'];
-        }
-        $batchName = 'Update Semua URL Aktif';
+        
+    } else { // Mode 'all'
+        $result = $connection->query("SELECT id FROM scraping_urls WHERE status = 'active' ORDER BY id ASC"); 
+        if (!$result) throw new Exception('Gagal query URL aktif: ' . $connection->error);
+        while ($row = $result->fetch_assoc()) { $urlIdsToProcess[] = $row['id']; }
+        $batchName = 'Update Semua URL Aktif (' . count($urlIdsToProcess) . ' URL)';
     }
 
     if (empty($urlIdsToProcess)) {
         throw new Exception('Tidak ada URL aktif yang ditemukan untuk diproses.');
     }
 
-    // 4. Pastikan scraping_logs.id adalah AUTO_INCREMENT
-    $checkTableQuery = "SHOW COLUMNS FROM scraping_logs WHERE Field = 'id'";
-    $result = $connection->query($checkTableQuery);
-    if (!$result) {
-        throw new Exception('Gagal mengecek struktur tabel scraping_logs: ' . $connection->error);
-    }
-    $columnInfo = $result->fetch_assoc();
-    $result->close();
-
-    if (strpos($columnInfo['Extra'], 'auto_increment') === false) {
-        $alterQuery = "ALTER TABLE scraping_logs MODIFY COLUMN id INT(11) NOT NULL AUTO_INCREMENT";
-        if (!$connection->query($alterQuery)) {
-            throw new Exception('Gagal memperbaiki struktur tabel scraping_logs: ' . $connection->error);
-        }
-    }
-
-    // 5. Buat log baru
     $totalUrls = count($urlIdsToProcess);
-    $urlIdsJson = json_encode($urlIdsToProcess);
+    $urlIdsJson = json_encode($urlIdsToProcess); 
 
+    // === PERBAIKAN SQL INSERT (HAPUS updated_at) ===
     $stmt = $connection->prepare(
         "INSERT INTO scraping_logs (user_id, batch_name, total_urls, url_ids, status, started_at) 
          VALUES (?, ?, ?, ?, 'running', NOW())"
     );
-    if (!$stmt) {
-        throw new Exception('Gagal menyiapkan query insert log: ' . $connection->error);
-    }
+    if (!$stmt) throw new Exception('Gagal prepare insert log: ' . $connection->error);
+    
     $stmt->bind_param('isis', $user_id, $batchName, $totalUrls, $urlIdsJson);
-    if (!$stmt->execute()) {
-        throw new Exception('Gagal membuat log proses di database: ' . $stmt->error);
-    }
-    $logId = $connection->insert_id;
+    if (!$stmt->execute()) throw new Exception('Gagal insert log: ' . $stmt->error);
+    // === AKHIR PERBAIKAN SQL INSERT ===
+    
+    $logId = $connection->insert_id; 
     $stmt->close();
 
-    // 6. Cari Python
-    $possiblePythonPaths = [
-        'C:\\Users\\Antimateri\\AppData\\Local\\Programs\\Python\\Python313\\python.exe',
-        'C:\\Python313\\python.exe',
-        'C:\\Program Files\\Python313\\python.exe',
-        'python.exe',
-        'python3.exe',
-        'python'
+    $python_path = getPythonPath();
+    if (!$python_path || !file_exists($python_path)) throw new Exception("Python venv tidak ditemukan di " . $python_path);
+    
+    $driver_path = getChromeDriverPath();
+    if (!$driver_path) throw new Exception("ChromeDriver tidak ditemukan di folder 'driver'.");
+    
+    $script_path_relative = 'main_scraper.pyw'; // Nama skrip di root
+
+    $args = [
+        "--log_id=" . $logId,
+        "--user_id=" . intval($user_id),
+        "--driver_path=" . $driver_path
     ];
-    $pythonPath = null;
-    foreach ($possiblePythonPaths as $path) {
-        if (file_exists($path) || in_array($path, ['python.exe', 'python3.exe', 'python'])) {
-            $output = shell_exec(escapeshellarg($path) . ' --version 2>&1');
-            if ($output && strpos(strtolower($output), 'python') !== false) {
-                $pythonPath = $path;
-                break;
-            }
-        }
-    }
-    if (!$pythonPath) {
-        throw new Exception('Python executable tidak ditemukan.');
+
+    $success_exec = executeBackgroundCommand($python_path, $script_path_relative, $args);
+
+    if (!$success_exec) {
+        throw new Exception("Gagal menjalankan skrip scraper di background.");
     }
 
-    // Path ke skrip
-    $scraperScriptPath = realpath(__DIR__ . '/../main_scraper.pyw');
-    if (!$scraperScriptPath || !file_exists($scraperScriptPath)) {
-        throw new Exception('Skrip scraper Python tidak ditemukan.');
-    }
-
-    // 7. Jalankan Python
-    $command = sprintf(
-        'start /B "" %s %s --log_id=%d --user_id=%d',
-        escapeshellarg($pythonPath),
-        escapeshellarg($scraperScriptPath),
-        $logId,
-        $user_id
-    );
-
-    if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
-        pclose(popen($command, 'r'));
-        sleep(1);
-    } else {
-        exec($command . " > /dev/null 2>&1 &");
-    }
-
-    // 8. Verifikasi log
-    $stmt = $connection->prepare("SELECT status FROM scraping_logs WHERE id = ? AND user_id = ?");
-    $stmt->bind_param('ii', $logId, $user_id);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    $logData = $result->fetch_assoc();
-    $stmt->close();
-
-    if ($logData && $logData['status'] === 'running') {
-        $response['success'] = true;
-        $response['message'] = 'Proses scraping telah dimulai di latar belakang.';
-        $response['log_id'] = $logId;
-        $response['total_urls'] = $totalUrls;
-        $response['python_path'] = $pythonPath;
-        $response['script_path'] = $scraperScriptPath;
-    } else {
-        throw new Exception('Proses Python gagal dimulai.');
-    }
+    $response['success'] = true;
+    $response['message'] = 'Proses scraping detail sekolah telah dimulai.';
+    $response['log_id'] = $logId; 
+    $response['total_urls'] = $totalUrls;
 
 } catch (Exception $e) {
     http_response_code(500);
+    $response['success'] = false; 
     $response['message'] = $e->getMessage();
 
     if ($logId > 0 && isset($connection) && $connection instanceof mysqli) {
         $stmt = $connection->prepare(
-            "UPDATE scraping_logs SET status = 'failed', error_message = ?, completed_at = NOW() WHERE id = ? AND user_id = ?"
+            "UPDATE scraping_logs SET status = 'failed', error_message = ?, completed_at = NOW() 
+             WHERE id = ? AND user_id = ?"
         );
         if ($stmt) {
-            $stmt->bind_param('sii', $response['message'], $logId, $user_id);
+            $errorMsg = $response['message'];
+            $stmt->bind_param('sii', $errorMsg, $logId, $user_id);
             $stmt->execute();
             $stmt->close();
+        } else {
+             error_log("Gagal prepare update log status ke failed: " . $connection->error);
         }
+    } else {
+         error_log("Log ID tidak valid atau koneksi DB bermasalah saat handle error.");
+    }
+} finally {
+    if (isset($connection) && $connection instanceof mysqli) {
+        $connection->close();
     }
 }
 
-if (isset($connection) && $connection instanceof mysqli) {
-    $connection->close();
-}
-
-ob_clean();
+ob_clean(); 
 echo json_encode($response, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
 exit;
+?>

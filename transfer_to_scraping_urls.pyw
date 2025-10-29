@@ -1,366 +1,262 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+"""
+===============================================================
+TRANSFER TO SCRAPING URLS - VERSI REFACTOR
+===============================================================
+- Menggunakan db_helper.py untuk operasi database (Menggantikan PHP Subprocess)
+- Menerima argumen --url_induk_id dan --user_id
+- Memindahkan data dari sekolah_scrape ke scraping_urls
+- Menandai sekolah_scrape sebagai 'processed' (bukan 'active' lagi)
+- Logging terpusat ke import_log via db_helper
+===============================================================
+"""
+
 import sys
+import os
 import logging
 import argparse
-import subprocess
-import json
-import os
+import traceback
 
-# Setup logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
+# --- FIX PATH IMPORT (jika helper di subfolder 'sekolah') ---
+project_root = os.path.dirname(os.path.abspath(__file__))
+# Jika file ini ada di dalam folder 'sekolah', parentnya adalah root
+parent_dir = os.path.dirname(project_root)
+if parent_dir not in sys.path:
+    sys.path.insert(0, parent_dir)
+# --- AKHIR FIX PATH ---
 
-def get_sekolah_scrape_data(url_induk_id=None):
-    """Get sekolah scrape data from database via PHP"""
+# ----------------------------------------------------------
+# 1. SETUP LOGGING & IMPORTS
+# ----------------------------------------------------------
+log_file = r'C:\laragon\www\dapokalsel\log_transfer.txt' # Log spesifik
+logging.basicConfig(
+    filename=log_file,
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
+
+logging.info("=" * 80)
+logging.info(">>> [REFACTOR] transfer_to_scraping_urls.pyw dimulai <<<")
+logging.info(f"Arguments: {sys.argv}")
+
+try:
+    # Hanya butuh db_helper
+    # Jika file ini di root, gunakan: from sekolah import db_helper
+    # Jika file ini di dalam sekolah, gunakan: import db_helper
     try:
-        # Dapatkan path absolut ke helper/connection.php
-        connection_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'helper', 'connection.php'))
-        
-        if url_induk_id:
-            cmd = ['php', '-r', f'''
-            require_once "{connection_path}";
-            if ($conn->connect_error) {{
-                die("Connection failed: " . $conn->connect_error);
-            }}
-            $query = "SELECT 
-                        s.id AS sekolah_scrape_id,
-                        s.npsn, 
-                        s.nama_sekolah, 
-                        s.url, 
-                        s.jenjang, 
-                        s.kecamatan_scrape_id AS kecamatan_scrape_id, 
-                        k.url_induk_id AS url_induk_id 
-                      FROM sekolah_scrape s 
-                      JOIN kecamatan_scrape kc ON s.kecamatan_scrape_id = kc.id 
-                      JOIN kabupaten_scrape k ON kc.kabupaten_scrape_id = k.id 
-                      WHERE k.url_induk_id = ? AND s.status = 'active'";
-            $stmt = $conn->prepare($query);
-            $stmt->bind_param("i", {url_induk_id});
-            $stmt->execute();
-            $result = $stmt->get_result();
-            $sekolah = [];
-            while ($row = $result->fetch_assoc()) {{
-                $sekolah[] = $row;
-            }}
-            echo json_encode($sekolah);
-            $conn->close();
-            ''']
-        else:
-            cmd = ['php', '-r', f'''
-            require_once "{connection_path}";
-            if ($conn->connect_error) {{
-                die("Connection failed: " . $conn->connect_error);
-            }}
-            $query = "SELECT 
-                        s.id AS sekolah_scrape_id,
-                        s.npsn, 
-                        s.nama_sekolah, 
-                        s.url, 
-                        s.jenjang, 
-                        s.kecamatan_scrape_id AS kecamatan_scrape_id, 
-                        k.url_induk_id AS url_induk_id 
-                      FROM sekolah_scrape s 
-                      JOIN kecamatan_scrape kc ON s.kecamatan_scrape_id = kc.id 
-                      JOIN kabupaten_scrape k ON kc.kabupaten_scrape_id = k.id 
-                      WHERE s.status = 'active'";
-            $result = $conn->query($query);
-            $sekolah = [];
-            while ($row = $result->fetch_assoc()) {{
-                $sekolah[] = $row;
-            }}
-            echo json_encode($sekolah);
-            $conn->close();
-            ''']
-        
-        result = subprocess.run(cmd, capture_output=True, text=True, check=True)
-        sekolah_list = json.loads(result.stdout)
-        logger.info(f"Found {len(sekolah_list)} sekolah records to transfer")
-        return sekolah_list
-        
-    except Exception as e:
-        logger.error(f"Error getting sekolah scrape data: {e}")
-        return []
+        # Coba import seolah skrip ini ada di root
+        from sekolah import db_helper
+        logging.info("✓ db_helper diimport dari subfolder 'sekolah'")
+    except ImportError:
+        # Jika gagal, coba import seolah skrip ini ada di dalam 'sekolah'
+        import db_helper
+        logging.info("✓ db_helper diimport dari folder yang sama ('sekolah')")
 
-def log_import_process(process_type, url_induk_id, user_id, status='running', total_processed=0, total_success=0, total_failed=0, error_message=None):
-    """Log import process to database via PHP"""
-    try:
-        connection_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'helper', 'connection.php'))
-        
-        if status == 'running':
-            cmd = ['php', '-r', f'''
-            require_once "{connection_path}";
-            if ($conn->connect_error) {{
-                die("Connection failed: " . $conn->connect_error);
-            }}
-            $stmt = $conn->prepare("INSERT INTO import_log (process_type, url_induk_id, user_id, status, started_at) VALUES (?, ?, ?, ?, NOW())");
-            $stmt->bind_param("siis", "{process_type}", {url_induk_id if url_induk_id else 'NULL'}, {user_id}, "{status}");
-            $stmt->execute();
-            echo $conn->insert_id;
-            $conn->close();
-            ''']
-        else:
-            error_msg = error_message.replace('"', '\\"') if error_message else ''
-            cmd = ['php', '-r', f'''
-            require_once "{connection_path}";
-            if ($conn->connect_error) {{
-                die("Connection failed: " . $conn->connect_error);
-            }}
-            $error_msg = "{error_msg}";
-            $stmt = $conn->prepare("UPDATE import_log SET total_processed = ?, total_success = ?, total_failed = ?, status = ?, completed_at = NOW(), error_message = ? WHERE process_type = ? AND url_induk_id = ? AND user_id = ? AND status = 'running' ORDER BY id DESC LIMIT 1");
-            $stmt->bind_param("iiisssii", {total_processed}, {total_success}, {total_failed}, "{status}", $error_msg, "{process_type}", {url_induk_id if url_induk_id else 'NULL'}, {user_id});
-            $stmt->execute();
-            $conn->close();
-            ''']
-        
-        result = subprocess.run(cmd, capture_output=True, text=True, check=True)
-        if status == 'running':
-            return int(result.stdout.strip())
-        return True
-        
-    except Exception as e:
-        logger.error(f"Error logging import process: {e}")
-        return None
+except ImportError as e:
+    logging.error(f"✗ Gagal import db_helper: {e}")
+    sys.exit(1)
+except Exception as e:
+    logging.error(f"✗ Error saat import: {e}")
+    traceback.print_exc()
+    sys.exit(1)
 
-def transfer_to_scraping_urls(sekolah_data_list):
-    """Transfer sekolah data to scraping_urls table via PHP"""
-    if not sekolah_data_list:
-        return 0, 0
+# ----------------------------------------------------------
+# 2. PARSE ARGUMENTS
+# ----------------------------------------------------------
+parser = argparse.ArgumentParser(description='Transfer Sekolah data to scraping_urls')
+parser.add_argument('--url_induk_id', type=int, required=True, help='URL Induk ID to process')
+parser.add_argument('--user_id', type=int, required=True, help='User ID performing the transfer')
+# Argumen --log_id tidak diperlukan di sini karena prosesnya relatif cepat dan log dibuat/diupdate di akhir
+
+args = parser.parse_args()
+
+logging.info(f"Parsed arguments:")
+logging.info(f"  - url_induk_id: {args.url_induk_id}")
+logging.info(f"  - user_id: {args.user_id}")
+
+# ----------------------------------------------------------
+# 3. FUNGSI UTAMA TRANSFER
+# ----------------------------------------------------------
+
+def run_transfer(url_induk_id, user_id):
+    """Fungsi utama untuk mengambil data dan mentransfernya."""
+    
+    inserted_count = 0
+    updated_count = 0
+    processed_count = 0
+    failed_count = 0
+    log_id_transfer = None # ID log untuk proses transfer ini
+    
+    conn = None # Definisikan conn di scope luar try
     
     try:
-        # Tambahkan user_id ke setiap record sebelum dikirim
-        for sekolah in sekolah_data_list:
-            if 'user_id' not in sekolah:
-                sekolah['user_id'] = 1  # Default user_id jika tidak ada
-        
-        # Pastikan semua record memiliki field yang diperlukan
-        for sekolah in sekolah_data_list:
-            if 'kecamatan_scrape_id' not in sekolah:
-                logger.error(f"Missing kecamatan_scrape_id in record: {sekolah}")
-                return 0, 0
-        
-        # Prepare data for PHP
-        data_json = json.dumps(sekolah_data_list).replace('"', '\\"')
-        
-        connection_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'helper', 'connection.php'))
-        
-        cmd = ['php', '-r', f'''
-        require_once "{connection_path}";
-        if ($conn->connect_error) {{
-            die("Connection failed: " . $conn->connect_error);
-        }}
-        
-        $data = json_decode("{data_json}", true);
-        $inserted = 0;
-        $updated = 0;
-        
-        foreach ($data as $item) {{
-            $sekolah_scrape_id = $item["sekolah_scrape_id"];
-            $kecamatan_scrape_id = $item["kecamatan_scrape_id"];
-            $user_id = $item["user_id"];
-            $url = $item["url"];
-            $nama_sekolah = $item["nama_sekolah"];
-            
-            // Check if URL already exists in scraping_urls
-            $check_stmt = $conn->prepare("SELECT id, sekolah_scrape_id, kecamatan_scrape_id FROM scraping_urls WHERE url = ?");
-            $check_stmt->bind_param("s", $url);
-            $check_stmt->execute();
-            $check_result = $check_stmt->get_result();
-            
-            if ($check_result->num_rows > 0) {{
-                // URL exists, update if needed
-                $existing = $check_result->fetch_assoc();
-                if ($existing["sekolah_scrape_id"] != $sekolah_scrape_id || $existing["kecamatan_scrape_id"] != $kecamatan_scrape_id) {{
-                    $update_stmt = $conn->prepare("UPDATE scraping_urls SET sekolah_scrape_id = ?, kecamatan_scrape_id = ?, description = ?, user_id = ?, updated_at = NOW() WHERE url = ?");
-                    $update_stmt->bind_param("iisis", $sekolah_scrape_id, $kecamatan_scrape_id, $nama_sekolah, $user_id, $url);
-                    if ($update_stmt->execute() && $update_stmt->affected_rows > 0) {{
-                        $updated++;
-                    }}
-                }}
-            }} else {{
-                // URL doesn't exist, insert new record
-                $insert_stmt = $conn->prepare("INSERT INTO scraping_urls (sekolah_scrape_id, kecamatan_scrape_id, url, description, status, user_id, created_at, updated_at) VALUES (?, ?, ?, ?, 'active', ?, NOW(), NOW())");
-                $insert_stmt->bind_param("iissi", $sekolah_scrape_id, $kecamatan_scrape_id, $url, $nama_sekolah, $user_id);
-                if ($insert_stmt->execute()) {{
-                    $inserted++;
-                }}
-            }}
-        }}
-        
-        echo json_encode(["inserted" => $inserted, "updated" => $updated]);
-        $conn->close();
-        ''']
-        
-        result = subprocess.run(cmd, capture_output=True, text=True, check=True)
-        result_data = json.loads(result.stdout.strip())
-        
-        inserted_count = result_data.get('inserted', 0)
-        updated_count = result_data.get('updated', 0)
-        
-        logger.info(f"Transfer completed: {inserted_count} inserted, {updated_count} updated")
-        return inserted_count, updated_count
-        
-    except Exception as e:
-        logger.error(f"Error transferring to scraping_urls: {e}")
-        return 0, 0
+        conn = db_helper.get_db_connection()
+        if not conn:
+            raise Exception("Gagal mendapatkan koneksi database.")
 
-def mark_sekolah_as_processed(sekolah_ids):
-    """Mark sekolah as processed in sekolah_scrape table"""
-    if not sekolah_ids:
-        return True
-    
-    try:
-        ids_str = ','.join(map(str, sekolah_ids))
-        
-        connection_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'helper', 'connection.php'))
-        
-        cmd = ['php', '-r', f'''
-        require_once "{connection_path}";
-        if ($conn->connect_error) {{
-            die("Connection failed: " . $conn->connect_error);
-        }}
-        
-        $ids = [{ids_str}];
-        $placeholders = str_repeat('?,', count($ids) - 1) . '?';
-        $query = "UPDATE sekolah_scrape SET status = 'active', updated_at = NOW() WHERE id IN ($placeholders)";
-        $stmt = $conn->prepare($query);
-        $types = str_repeat('i', count($ids));
-        $stmt->bind_param($types, ...array_values($ids));
-        
-        $success = $stmt->execute();
-        echo $success ? "1" : "0";
-        $conn->close();
-        ''']
-        
-        result = subprocess.run(cmd, capture_output=True, text=True, check=True)
-        success = result.stdout.strip() == "1"
-        
-        if success:
-            logger.info(f"Marked {len(sekolah_ids)} sekolah records as active")
-        else:
-            logger.error("Failed to mark sekolah records as processed")
-        
-        return success
-        
-    except Exception as e:
-        logger.error(f"Error marking sekolah as processed: {e}")
-        return False
+        # Buat log 'running' untuk transfer ini
+        log_id_transfer = db_helper.create_log_entry(user_id, 'transfer', url_induk_id)
+        if not log_id_transfer:
+             logging.warning("Gagal membuat log entry untuk transfer, proses tetap berjalan.")
 
-def process_transfer_for_url_induk(url_induk_id, sekolah_group, user_id):
-    """Process transfer for single URL induk group"""
-    logger.info(f"Processing transfer for URL Induk ID: {url_induk_id}")
-    logger.info(f"Sekolah records to transfer: {len(sekolah_group)}")
-    logger.info(f"User ID: {user_id}")
-    
-    # Log process start
-    log_id = log_import_process('transfer', url_induk_id, user_id, 'running')
-    
-    try:
-        # Tambahkan user_id ke setiap record
-        for sekolah in sekolah_group:
-            sekolah['user_id'] = user_id
+        # 1. Ambil data sekolah_scrape yang berstatus 'active' untuk url_induk_id ini
+        logging.info(f"Mengambil data sekolah 'active' untuk URL Induk ID: {url_induk_id}")
+        sekolah_to_transfer = []
+        with conn.cursor() as cursor:
+            query = """
+                SELECT 
+                    s.id AS sekolah_scrape_id, 
+                    s.npsn, 
+                    s.nama_sekolah, 
+                    s.url, 
+                    s.jenjang, 
+                    s.kecamatan_scrape_id, 
+                    kc.kabupaten_scrape_id -- Tambahkan ini
+                FROM sekolah_scrape s
+                JOIN kecamatan_scrape kc ON s.kecamatan_scrape_id = kc.id
+                JOIN kabupaten_scrape kb ON kc.kabupaten_scrape_id = kb.id
+                WHERE kb.url_induk_id = %s AND s.status = 'active' 
+            """
+            cursor.execute(query, (url_induk_id,))
+            sekolah_to_transfer = cursor.fetchall()
+            processed_count = len(sekolah_to_transfer) # Total yang akan diproses
         
-        # Transfer data to scraping_urls
-        inserted_count, updated_count = transfer_to_scraping_urls(sekolah_group)
-        total_transferred = inserted_count + updated_count
-        
-        if total_transferred > 0:
-            # Mark sekolah as processed
-            sekolah_ids = [item['sekolah_scrape_id'] for item in sekolah_group]
-            if mark_sekolah_as_processed(sekolah_ids):
-                # Log success
-                log_import_process('transfer', url_induk_id, user_id, 'completed',
-                                  total_processed=len(sekolah_group),
-                                  total_success=total_transferred,
-                                  total_failed=len(sekolah_group) - total_transferred)
-                
-                logger.info(f"✅ Successfully transferred {total_transferred} records for URL Induk ID {url_induk_id}")
-                logger.info(f"   - Inserted: {inserted_count}")
-                logger.info(f"   - Updated: {updated_count}")
-                return True, total_transferred
-            else:
-                error_msg = "Failed to mark sekolah as processed"
-                log_import_process('transfer', url_induk_id, user_id, 'failed',
-                                  total_processed=len(sekolah_group),
-                                  total_success=0,
-                                  total_failed=len(sekolah_group),
-                                  error_message=error_msg)
-                logger.error(f"❌ {error_msg} for URL Induk ID {url_induk_id}")
-                return False, 0
-        else:
-            error_msg = "No records were transferred"
-            log_import_process('transfer', url_induk_id, user_id, 'failed',
-                              total_processed=len(sekolah_group),
-                              total_success=0,
-                              total_failed=len(sekolah_group),
-                              error_message=error_msg)
-            logger.warning(f"⚠️ {error_msg} for URL Induk ID {url_induk_id}")
-            return False, 0
-            
-    except Exception as e:
-        error_msg = str(e)
-        log_import_process('transfer', url_induk_id, user_id, 'failed',
-                          total_processed=len(sekolah_group),
-                          total_success=0,
-                          total_failed=len(sekolah_group),
-                          error_message=error_msg)
-        logger.error(f"❌ Transfer failed for URL Induk ID {url_induk_id}: {error_msg}")
-        return False, 0
+        logging.info(f"Ditemukan {processed_count} data sekolah untuk ditransfer.")
 
-def main():
-    parser = argparse.ArgumentParser(description='Transfer Sekolah data to scraping_urls')
-    parser.add_argument('--url_induk_id', type=int, help='Specific URL Induk ID to process')
-    parser.add_argument('--user_id', type=int, required=True, help='User ID performing the transfer')
-    
-    args = parser.parse_args()
-    
-    logger.info("=== STARTING TRANSFER TO SCRAPING_URLS ===")
-    logger.info(f"URL Induk ID: {args.url_induk_id}")
-    logger.info(f"User ID: {args.user_id}")
-    
-    try:
-        # Get sekolah scrape data
-        sekolah_list = get_sekolah_scrape_data(args.url_induk_id)
-        
-        if not sekolah_list:
-            logger.warning("No sekolah records found for transfer")
-            sys.exit(0)
-        
-        # Group sekolah by url_induk_id
-        url_induk_groups = {}
-        for sekolah in sekolah_list:
-            url_induk_id = sekolah['url_induk_id']
-            if url_induk_id not in url_induk_groups:
-                url_induk_groups[url_induk_id] = []
-            url_induk_groups[url_induk_id].append(sekolah)
-        
-        total_success_count = 0
-        total_failed_count = 0
-        total_transferred = 0
-        
-        for url_induk_id, sekolah_group in url_induk_groups.items():
-            success, transferred_count = process_transfer_for_url_induk(url_induk_id, sekolah_group, args.user_id)
-            
-            if success:
-                total_success_count += 1
-                total_transferred += transferred_count
-            else:
-                total_failed_count += 1
-        
-        logger.info(f"\n=== TRANSFER SUMMARY ===")
-        logger.info(f"Total URL Induk Groups: {len(url_induk_groups)}")
-        logger.info(f"Successful Groups: {total_success_count}")
-        logger.info(f"Failed Groups: {total_failed_count}")
-        logger.info(f"Total Records Transferred: {total_transferred}")
-        
-        if total_success_count > 0:
-            logger.info("🎉 Transfer completed with some success!")
-            sys.exit(0)
-        else:
-            logger.error("❌ All transfers failed")
-            sys.exit(1)
-            
-    except Exception as e:
-        logger.error(f"Fatal error in transfer process: {e}")
-        sys.exit(1)
+        if not sekolah_to_transfer:
+            logging.info("Tidak ada data sekolah baru untuk ditransfer.")
+            # Update log sebagai completed (0 sukses) jika ada log_id
+            if log_id_transfer:
+                db_helper.finish_log_entry(log_id_transfer, 'completed', 0, 0, 0, "Tidak ada data sekolah baru.")
+            return True # Selesai tanpa error
 
+        # 2. Proses transfer (insert/update ke scraping_urls)
+        logging.info("Memulai proses transfer ke scraping_urls...")
+        sekolah_ids_processed = [] # Simpan ID sekolah_scrape yang berhasil diproses
+
+        with conn.cursor() as cursor:
+            for sekolah in sekolah_to_transfer:
+                try:
+                    s_id = sekolah['sekolah_scrape_id']
+                    k_id = sekolah['kecamatan_scrape_id']
+                    kb_id = sekolah['kabupaten_scrape_id'] # Ambil dari hasil query
+                    url = sekolah['url']
+                    nama = sekolah['nama_sekolah']
+                    
+                    # Cek apakah URL sudah ada di scraping_urls
+                    cursor.execute("SELECT id, sekolah_scrape_id FROM scraping_urls WHERE url = %s", (url,))
+                    existing = cursor.fetchone()
+                    
+                    if existing:
+                        # Update jika sekolah_scrape_id berbeda (atau tambahkan field lain jika perlu)
+                        if existing['sekolah_scrape_id'] != s_id:
+                            cursor.execute("""
+                                UPDATE scraping_urls 
+                                SET sekolah_scrape_id = %s, kecamatan_scrape_id = %s, kabupaten_scrape_id = %s, 
+                                    description = %s, user_id = %s, updated_at = NOW() 
+                                WHERE id = %s 
+                            """, (s_id, k_id, kb_id, nama, user_id, existing['id']))
+                            if cursor.rowcount > 0:
+                                updated_count += 1
+                                sekolah_ids_processed.append(s_id)
+                                logging.debug(f"  Updated URL: {url} (Sekolah ID: {s_id})")
+                        else:
+                            # Jika sama, tidak perlu update, tapi tandai sudah diproses
+                            sekolah_ids_processed.append(s_id) 
+                            logging.debug(f"  Skipped (already exists): {url} (Sekolah ID: {s_id})")
+                    else:
+                        # Insert baru
+                        cursor.execute("""
+                            INSERT INTO scraping_urls 
+                            (user_id, sekolah_scrape_id, kecamatan_scrape_id, kabupaten_scrape_id, url, description, status, created_at, updated_at) 
+                            VALUES (%s, %s, %s, %s, %s, %s, 'active', NOW(), NOW())
+                        """, (user_id, s_id, k_id, kb_id, url, nama))
+                        if cursor.lastrowid:
+                            inserted_count += 1
+                            sekolah_ids_processed.append(s_id)
+                            logging.debug(f"  Inserted URL: {url} (Sekolah ID: {s_id})")
+                        else:
+                             failed_count += 1
+                             logging.error(f"  Gagal insert URL: {url}")
+                             
+                    conn.commit() # Commit per item atau per batch? Per item lebih aman jika ada error
+
+                except Exception as e_item:
+                    failed_count += 1
+                    logging.error(f"  Gagal memproses item sekolah ID {sekolah.get('sekolah_scrape_id', 'N/A')}: {e_item}")
+                    conn.rollback() # Rollback item yang gagal
+
+        logging.info(f"Transfer selesai: {inserted_count} inserted, {updated_count} updated, {failed_count} failed.")
+
+        # 3. Tandai sekolah_scrape yang berhasil diproses sebagai 'processed'
+        if sekolah_ids_processed:
+            logging.info(f"Menandai {len(sekolah_ids_processed)} sekolah sebagai 'processed'...")
+            try:
+                with conn.cursor() as cursor:
+                    placeholders = ','.join(['%s'] * len(sekolah_ids_processed))
+                    query_update = f"UPDATE sekolah_scrape SET status = 'processed', updated_at = NOW() WHERE id IN ({placeholders})"
+                    cursor.execute(query_update, tuple(sekolah_ids_processed))
+                    conn.commit()
+                    logging.info("✓ Berhasil menandai sekolah sebagai 'processed'.")
+            except Exception as e_update:
+                 logging.error(f"✗ Gagal menandai sekolah sebagai 'processed': {e_update}")
+                 # Ini tidak dianggap error fatal untuk status log, tapi perlu dicatat
+                 if log_id_transfer:
+                      db_helper.finish_log_entry(log_id_transfer, 'failed' if failed_count > 0 else 'completed', 
+                                                 processed_count, inserted_count + updated_count, failed_count, 
+                                                 f"Gagal update status sekolah_scrape: {e_update}")
+                 return False # Kembalikan False jika update status gagal
+
+        # 4. Update log transfer final
+        final_status = 'completed' if failed_count == 0 else 'failed'
+        error_msg = f"{failed_count} item gagal diproses." if failed_count > 0 else None
+        if log_id_transfer:
+            db_helper.finish_log_entry(log_id_transfer, final_status, 
+                                     processed_count, inserted_count + updated_count, failed_count, error_msg)
+
+        return failed_count == 0 # Return True jika tidak ada error
+
+    except Exception as e:
+        logging.error(f"✗ Error fatal selama proses transfer: {e}")
+        traceback.print_exc()
+        # Update log sebagai failed jika ada log_id
+        if log_id_transfer:
+             db_helper.finish_log_entry(log_id_transfer, 'failed', processed_count, inserted_count + updated_count, 
+                                        processed_count - (inserted_count + updated_count), f"FATAL: {str(e)}")
+        return False # Return False jika ada error fatal
+        
+    finally:
+         if conn:
+             conn.close()
+             logging.info("Koneksi database ditutup.")
+
+# ----------------------------------------------------------
+# 6. MAIN EXECUTION
+# ----------------------------------------------------------
 if __name__ == "__main__":
-    main()
+    try:
+        success = run_transfer(args.url_induk_id, args.user_id)
+        if success:
+            logging.info("🎉 Proses transfer selesai tanpa error.")
+            sys.exit(0) # Exit code 0 untuk sukses
+        else:
+            logging.error("❌ Proses transfer selesai dengan error.")
+            sys.exit(1) # Exit code 1 untuk error
+            
+    except KeyboardInterrupt:
+        logging.warning("\nProses transfer dihentikan oleh pengguna.")
+        # Coba update log jadi cancelled jika ada log_id (meski mungkin sudah di-handle di db_helper)
+        # if 'log_id_transfer' in locals() and log_id_transfer:
+        #     db_helper.finish_log_entry(log_id_transfer, 'cancelled', 0,0,0, "Dibatalkan pengguna")
+        sys.exit(1)
+    except Exception as e_fatal:
+        logging.error(f"✗✗✗ ERROR FATAL tidak tertangkap: {e_fatal}")
+        traceback.print_exc()
+        # Coba update log jadi failed jika ada log_id
+        # if 'log_id_transfer' in locals() and log_id_transfer:
+        #      db_helper.finish_log_entry(log_id_transfer, 'failed', 0,0,0, f"FATAL Uncaught: {str(e_fatal)}")
+        sys.exit(1)
+    finally:
+        logging.info(">>> Script transfer selesai <<<")

@@ -10,6 +10,7 @@ def get_db_connection():
     try:
         # Menentukan path absolut ke file config.ini dari lokasi skrip ini
         config_path = os.path.join(os.path.dirname(__file__), 'config.ini')
+        print(f"DEBUG: Mencoba membaca konfigurasi dari: {config_path}")
         
         if not os.path.exists(config_path):
             print(f"Error: File konfigurasi tidak ditemukan di {config_path}")

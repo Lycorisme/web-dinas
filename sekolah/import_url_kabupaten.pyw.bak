@@ -1,0 +1,499 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+"""
+===============================================================
+IMPORT URL KABUPATEN - SCRAPER DENGAN LOGGING
+===============================================================
+✅ Ditambahkan logging awal untuk memastikan script berjalan
+✅ Logging Python executable dan arguments
+===============================================================
+"""
+
+import sys
+import os
+import logging
+
+# ----------------------------------------------------------
+# 1. LOGGING AWAL – untuk memastikan script benar-benar jalan
+# ----------------------------------------------------------
+log_file = r'C:\laragon\www\dapokalsel\log_kabupaten.txt'
+logging.basicConfig(
+    filename=log_file,
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
+
+logging.info("=" * 80)
+logging.info(">>> import_url_kabupaten.pyw dimulai <<<")
+logging.info(f"Python executable: {sys.executable}")
+logging.info(f"Python version: {sys.version}")
+logging.info(f"Script path: {os.path.abspath(__file__)}")
+logging.info(f"Working directory: {os.getcwd()}")
+logging.info(f"Arguments: {sys.argv}")
+logging.info("=" * 80)
+
+# ----------------------------------------------------------
+# 2. IMPORT LIBRARY YANG DIPERLUKAN
+# ----------------------------------------------------------
+try:
+    import argparse
+    import time
+    import configparser
+    from datetime import datetime
+    
+    # Import library database
+    import pymysql
+    
+    # Import library web scraping - SELALU IMPORT SEMUA
+    import requests
+    from bs4 import BeautifulSoup
+    
+    # Optional: Selenium untuk anti-bot
+    try:
+        import undetected_chromedriver as uc
+        from selenium.webdriver.common.by import By
+        from selenium.webdriver.support.ui import WebDriverWait
+        from selenium.webdriver.support import expected_conditions as EC
+        USE_SELENIUM = True
+        logging.info("✓ Selenium & undetected_chromedriver loaded")
+    except ImportError as e:
+        USE_SELENIUM = False
+        logging.warning(f"⚠ Selenium tidak tersedia, akan menggunakan requests saja: {e}")
+    
+    logging.info("✓ Semua library berhasil diimport")
+    
+except ImportError as e:
+    logging.error(f"✗ Gagal import library: {e}")
+    logging.error("Pastikan library terinstall: pip install pymysql beautifulsoup4 requests selenium undetected-chromedriver")
+    sys.exit(1)
+
+# ----------------------------------------------------------
+# 3. PARSE ARGUMENTS
+# ----------------------------------------------------------
+parser = argparse.ArgumentParser(description='Import URL Kabupaten dari Dapodik')
+parser.add_argument('--url_induk_id', type=int, required=True, help='ID URL Induk')
+parser.add_argument('--user_id', type=int, default=1, help='User ID')
+parser.add_argument('--max_retries', type=int, default=300, help='Max retries untuk scraping')
+
+args = parser.parse_args()
+
+logging.info(f"Parsed arguments:")
+logging.info(f"  - url_induk_id: {args.url_induk_id}")
+logging.info(f"  - user_id: {args.user_id}")
+logging.info(f"  - max_retries: {args.max_retries}")
+
+# ----------------------------------------------------------
+# 4. BACA KONFIGURASI DATABASE
+# ----------------------------------------------------------
+config_path = os.path.join(os.path.dirname(__file__), '..', 'helper', 'config.ini')
+config = configparser.ConfigParser()
+
+try:
+    config.read(config_path)
+    
+    db_config = {
+        'host': config.get('database', 'host', fallback='localhost'),
+        'port': config.getint('database', 'port', fallback=3306),
+        'user': config.get('database', 'user', fallback='root'),
+        'password': config.get('database', 'password', fallback=''),
+        'database': config.get('database', 'database', fallback='dapokalsel'),
+        'charset': 'utf8mb4'
+    }
+    
+    logging.info(f"✓ Konfigurasi database berhasil dibaca dari: {config_path}")
+    logging.info(f"  - Host: {db_config['host']}")
+    logging.info(f"  - Database: {db_config['database']}")
+    
+except Exception as e:
+    logging.error(f"✗ Gagal membaca konfigurasi: {e}")
+    sys.exit(1)
+
+# ----------------------------------------------------------
+# 5. KONEKSI DATABASE
+# ----------------------------------------------------------
+try:
+    connection = pymysql.connect(**db_config)
+    cursor = connection.cursor(pymysql.cursors.DictCursor)
+    logging.info("✓ Koneksi database berhasil")
+    
+except Exception as e:
+    logging.error(f"✗ Gagal koneksi database: {e}")
+    sys.exit(1)
+
+# ----------------------------------------------------------
+# 6. AMBIL URL INDUK
+# ----------------------------------------------------------
+try:
+    cursor.execute(
+        "SELECT url FROM url_induk_scrape WHERE id = %s AND status = 'active'",
+        (args.url_induk_id,)
+    )
+    url_induk = cursor.fetchone()
+    
+    if not url_induk:
+        logging.error(f"✗ URL Induk dengan ID {args.url_induk_id} tidak ditemukan")
+        sys.exit(1)
+    
+    base_url = url_induk['url']
+    logging.info(f"✓ URL Induk ditemukan: {base_url}")
+    
+except Exception as e:
+    logging.error(f"✗ Gagal mengambil URL Induk: {e}")
+    sys.exit(1)
+
+# ----------------------------------------------------------
+# 7. UPDATE STATUS IMPORT LOG KE 'RUNNING'
+# ----------------------------------------------------------
+try:
+    cursor.execute("""
+        UPDATE import_log 
+        SET status = 'running', started_at = NOW() 
+        WHERE url_induk_id = %s AND process_type = 'kabupaten' AND status = 'running'
+    """, (args.url_induk_id,))
+    connection.commit()
+    logging.info("✓ Status import_log diupdate ke 'running'")
+    
+except Exception as e:
+    logging.warning(f"⚠ Gagal update import_log: {e}")
+
+# ----------------------------------------------------------
+# 8. FUNGSI SCRAPING KABUPATEN
+# ----------------------------------------------------------
+def scrape_kabupaten(url, max_retries=300):
+    """Scrape daftar kabupaten dari halaman Dapodik"""
+    
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+    }
+    
+    for attempt in range(max_retries):
+        try:
+            logging.info(f"Attempt {attempt + 1}/{max_retries}: Fetching {url}")
+            
+            response = requests.get(url, headers=headers, timeout=30)
+            response.raise_for_status()
+            
+            soup = BeautifulSoup(response.content, 'html.parser')
+            
+            # DEBUG: Log struktur HTML untuk analisis
+            logging.info(f"Response Status: {response.status_code}")
+            logging.info(f"Content Length: {len(response.content)}")
+            
+            kabupaten_list = []
+            
+            # METODE 1: Cari semua link yang mengandung kata kunci kabupaten/kota
+            links = soup.find_all('a', href=True)
+            logging.info(f"Total links found: {len(links)}")
+            
+            for link in links:
+                href = link.get('href', '')
+                text = link.get_text(strip=True)
+                
+                # Filter link yang kemungkinan kabupaten
+                # Sesuaikan pattern ini dengan struktur URL Dapodik
+                if any(keyword in href.lower() for keyword in ['kabupaten', 'kota', '/sp/', '/2/']):
+                    # Pastikan bukan link yang sama dengan URL induk
+                    if href != url and href != '':
+                        # Buat URL lengkap jika relative
+                        if not href.startswith('http'):
+                            from urllib.parse import urljoin
+                            full_url = urljoin(url, href)
+                        else:
+                            full_url = href
+                        
+                        # Extract kode dari URL (contoh: /sp/2/150100 -> kode: 150100)
+                        import re
+                        kode_match = re.search(r'/(\d{6})/?
+
+# ----------------------------------------------------------
+# 9. SIMPAN DATA KABUPATEN KE DATABASE
+# ----------------------------------------------------------
+def save_kabupaten_to_db(kabupaten_data, url_induk_id, user_id):
+    """Simpan data kabupaten ke database"""
+    
+    success_count = 0
+    failed_count = 0
+    
+    for kab in kabupaten_data:
+        try:
+            # Cek apakah sudah ada
+            cursor.execute(
+                "SELECT id FROM kabupaten_scrape WHERE url = %s",
+                (kab['url'],)
+            )
+            existing = cursor.fetchone()
+            
+            if existing:
+                # Update jika sudah ada
+                cursor.execute("""
+                    UPDATE kabupaten_scrape 
+                    SET kode_kabupaten = %s, nama_kabupaten = %s, 
+                        status = 'active', updated_at = NOW()
+                    WHERE id = %s
+                """, (kab['kode'], kab['nama'], existing['id']))
+                
+                logging.info(f"  ↻ Updated: {kab['nama']}")
+            else:
+                # Insert baru
+                cursor.execute("""
+                    INSERT INTO kabupaten_scrape 
+                    (url_induk_id, kode_kabupaten, nama_kabupaten, url, status, created_at, updated_at)
+                    VALUES (%s, %s, %s, %s, 'active', NOW(), NOW())
+                """, (url_induk_id, kab['kode'], kab['nama'], kab['url']))
+                
+                logging.info(f"  ✓ Inserted: {kab['nama']}")
+            
+            connection.commit()
+            success_count += 1
+            
+        except Exception as e:
+            logging.error(f"  ✗ Failed to save {kab['nama']}: {e}")
+            failed_count += 1
+            connection.rollback()
+    
+    return success_count, failed_count
+
+# ----------------------------------------------------------
+# 10. PROSES UTAMA
+# ----------------------------------------------------------
+try:
+    logging.info("=" * 80)
+    logging.info("MEMULAI PROSES SCRAPING KABUPATEN")
+    logging.info("=" * 80)
+    
+    # Scraping kabupaten
+    kabupaten_data = scrape_kabupaten(base_url, args.max_retries)
+    
+    if not kabupaten_data:
+        raise Exception("Tidak ada data kabupaten yang berhasil di-scrape")
+    
+    # Simpan ke database
+    success_count, failed_count = save_kabupaten_to_db(
+        kabupaten_data, 
+        args.url_induk_id, 
+        args.user_id
+    )
+    
+    # Update import_log
+    cursor.execute("""
+        UPDATE import_log 
+        SET status = 'completed', 
+            total_processed = %s,
+            total_success = %s,
+            total_failed = %s,
+            completed_at = NOW()
+        WHERE url_induk_id = %s AND process_type = 'kabupaten'
+        ORDER BY started_at DESC LIMIT 1
+    """, (len(kabupaten_data), success_count, failed_count, args.url_induk_id))
+    
+    connection.commit()
+    
+    logging.info("=" * 80)
+    logging.info("PROSES SELESAI")
+    logging.info(f"Total Processed: {len(kabupaten_data)}")
+    logging.info(f"Success: {success_count}")
+    logging.info(f"Failed: {failed_count}")
+    logging.info("=" * 80)
+    
+except Exception as e:
+    logging.error(f"✗✗✗ ERROR FATAL: {e}")
+    
+    # Update import_log dengan status failed
+    try:
+        cursor.execute("""
+            UPDATE import_log 
+            SET status = 'failed', 
+                error_message = %s,
+                completed_at = NOW()
+            WHERE url_induk_id = %s AND process_type = 'kabupaten'
+            ORDER BY started_at DESC LIMIT 1
+        """, (str(e), args.url_induk_id))
+        connection.commit()
+    except:
+        pass
+    
+    sys.exit(1)
+
+finally:
+    # Tutup koneksi
+    if 'cursor' in locals():
+        cursor.close()
+    if 'connection' in locals():
+        connection.close()
+    
+    logging.info("✓ Koneksi database ditutup")
+    logging.info(">>> Script selesai <<<")
+, href)
+                        kode = kode_match.group(1) if kode_match else ''
+                        
+                        if text and len(text) > 2:  # Minimal ada nama
+                            kabupaten_list.append({
+                                'kode': kode,
+                                'nama': text,
+                                'url': full_url
+                            })
+                            logging.info(f"  Found: {text} -> {full_url}")
+            
+            # Remove duplicates berdasarkan URL
+            seen = set()
+            unique_list = []
+            for kab in kabupaten_list:
+                if kab['url'] not in seen:
+                    seen.add(kab['url'])
+                    unique_list.append(kab)
+            
+            logging.info(f"✓ Berhasil scraping {len(unique_list)} kabupaten")
+            return unique_list
+            
+        except requests.exceptions.HTTPError as e:
+            if '404' in str(e):
+                logging.warning(f"⚠ Attempt {attempt + 1} failed: {e}")
+                logging.warning(f"⚠ URL mungkin salah atau sudah berubah")
+                # Coba attempt berikutnya (mungkin temporary error)
+                if attempt < max_retries - 1:
+                    time.sleep(2)
+                else:
+                    logging.error(f"✗ URL tidak valid setelah {max_retries} attempts")
+                    return []
+            else:
+                logging.warning(f"⚠ Attempt {attempt + 1} failed: {e}")
+                if attempt < max_retries - 1:
+                    time.sleep(2)
+                else:
+                    return []
+        
+        except requests.exceptions.RequestException as e:
+            logging.warning(f"⚠ Attempt {attempt + 1} failed: {e}")
+            if attempt < max_retries - 1:
+                time.sleep(2)
+            else:
+                logging.error(f"✗ Gagal scraping setelah {max_retries} attempts")
+                return []
+        
+        except Exception as e:
+            logging.error(f"✗ Error parsing HTML: {e}")
+            import traceback
+            logging.error(traceback.format_exc())
+            return []
+    
+    return []
+
+# ----------------------------------------------------------
+# 9. SIMPAN DATA KABUPATEN KE DATABASE
+# ----------------------------------------------------------
+def save_kabupaten_to_db(kabupaten_data, url_induk_id, user_id):
+    """Simpan data kabupaten ke database"""
+    
+    success_count = 0
+    failed_count = 0
+    
+    for kab in kabupaten_data:
+        try:
+            # Cek apakah sudah ada
+            cursor.execute(
+                "SELECT id FROM kabupaten_scrape WHERE url = %s",
+                (kab['url'],)
+            )
+            existing = cursor.fetchone()
+            
+            if existing:
+                # Update jika sudah ada
+                cursor.execute("""
+                    UPDATE kabupaten_scrape 
+                    SET kode_kabupaten = %s, nama_kabupaten = %s, 
+                        status = 'active', updated_at = NOW()
+                    WHERE id = %s
+                """, (kab['kode'], kab['nama'], existing['id']))
+                
+                logging.info(f"  ↻ Updated: {kab['nama']}")
+            else:
+                # Insert baru
+                cursor.execute("""
+                    INSERT INTO kabupaten_scrape 
+                    (url_induk_id, kode_kabupaten, nama_kabupaten, url, status, created_at, updated_at)
+                    VALUES (%s, %s, %s, %s, 'active', NOW(), NOW())
+                """, (url_induk_id, kab['kode'], kab['nama'], kab['url']))
+                
+                logging.info(f"  ✓ Inserted: {kab['nama']}")
+            
+            connection.commit()
+            success_count += 1
+            
+        except Exception as e:
+            logging.error(f"  ✗ Failed to save {kab['nama']}: {e}")
+            failed_count += 1
+            connection.rollback()
+    
+    return success_count, failed_count
+
+# ----------------------------------------------------------
+# 10. PROSES UTAMA
+# ----------------------------------------------------------
+try:
+    logging.info("=" * 80)
+    logging.info("MEMULAI PROSES SCRAPING KABUPATEN")
+    logging.info("=" * 80)
+    
+    # Scraping kabupaten
+    kabupaten_data = scrape_kabupaten(base_url, args.max_retries)
+    
+    if not kabupaten_data:
+        raise Exception("Tidak ada data kabupaten yang berhasil di-scrape")
+    
+    # Simpan ke database
+    success_count, failed_count = save_kabupaten_to_db(
+        kabupaten_data, 
+        args.url_induk_id, 
+        args.user_id
+    )
+    
+    # Update import_log
+    cursor.execute("""
+        UPDATE import_log 
+        SET status = 'completed', 
+            total_processed = %s,
+            total_success = %s,
+            total_failed = %s,
+            completed_at = NOW()
+        WHERE url_induk_id = %s AND process_type = 'kabupaten'
+        ORDER BY started_at DESC LIMIT 1
+    """, (len(kabupaten_data), success_count, failed_count, args.url_induk_id))
+    
+    connection.commit()
+    
+    logging.info("=" * 80)
+    logging.info("PROSES SELESAI")
+    logging.info(f"Total Processed: {len(kabupaten_data)}")
+    logging.info(f"Success: {success_count}")
+    logging.info(f"Failed: {failed_count}")
+    logging.info("=" * 80)
+    
+except Exception as e:
+    logging.error(f"✗✗✗ ERROR FATAL: {e}")
+    
+    # Update import_log dengan status failed
+    try:
+        cursor.execute("""
+            UPDATE import_log 
+            SET status = 'failed', 
+                error_message = %s,
+                completed_at = NOW()
+            WHERE url_induk_id = %s AND process_type = 'kabupaten'
+            ORDER BY started_at DESC LIMIT 1
+        """, (str(e), args.url_induk_id))
+        connection.commit()
+    except:
+        pass
+    
+    sys.exit(1)
+
+finally:
+    # Tutup koneksi
+    if 'cursor' in locals():
+        cursor.close()
+    if 'connection' in locals():
+        connection.close()
+    
+    logging.info("✓ Koneksi database ditutup")
+    logging.info(">>> Script selesai <<<")

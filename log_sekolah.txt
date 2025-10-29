@@ -1,0 +1,120 @@
+2025-10-30 05:23:18,981 - INFO - ================================================================================
+2025-10-30 05:23:18,981 - INFO - >>> [ROMBAK TOTAL v3 - Robust] import_url_sekolah.pyw dimulai <<<
+2025-10-30 05:23:18,981 - INFO - Arguments: ['sekolah\\import_url_sekolah.pyw', '--kecamatan_id=168', '--user_id=1', '--max_retries=300', '--driver_path=C:\\laragon\\www\\dapokalsel\\driver\\chromedriver.exe', '--log_id=321']
+2025-10-30 05:23:19,801 - INFO - \u2713 Library & Helper berhasil diimport
+2025-10-30 05:23:19,804 - INFO - Parsed arguments:
+2025-10-30 05:23:19,804 - INFO -   - kecamatan_id: 168
+2025-10-30 05:23:19,812 - INFO -   - driver_path: C:\laragon\www\dapokalsel\driver\chromedriver.exe
+2025-10-30 05:23:19,812 - INFO -   - log_id: 321
+2025-10-30 05:23:19,822 - INFO - \u2713 Koneksi database (pymysql) berhasil
+2025-10-30 05:23:19,824 - INFO - \u2713 Ditemukan 1 kecamatan untuk diproses
+2025-10-30 05:23:19,827 - INFO - \u2713 Koneksi database (pymysql) berhasil
+2025-10-30 05:23:19,834 - INFO - \u2713 Log import_log ID 321 diperbarui: status=running
+2025-10-30 05:23:19,835 - INFO - ==================================================
+2025-10-30 05:23:19,836 - INFO - \U0001f680 Memulai Setup Driver Selenium (v2)...
+2025-10-30 05:23:19,837 - INFO - \u2713 User Data Dir: C:\laragon\www\dapokalsel\temp\chrome_profile
+2025-10-30 05:23:19,837 - INFO - \u2713 Driver Path: C:\laragon\www\dapokalsel\driver\chromedriver.exe
+2025-10-30 05:23:19,838 - INFO - Mencari chrome.exe...
+2025-10-30 05:23:19,838 - INFO - \u2713 chrome.exe ditemukan di: C:\Program Files\Google\Chrome\Application\chrome.exe
+2025-10-30 05:23:19,838 - INFO - \u2713 Binary Location diset ke: C:\Program Files\Google\Chrome\Application\chrome.exe
+2025-10-30 05:23:19,866 - WARNING - could not detect version_main.therefore, we are assuming it is chrome 108 or higher
+2025-10-30 05:23:21,317 - INFO - setting properties for headless
+2025-10-30 05:23:21,320 - INFO - \u2713 Driver Selenium berhasil diinisialisasi.
+2025-10-30 05:23:21,320 - INFO - ==================================================
+2025-10-30 05:23:21,320 - INFO - 
+===== Memproses Kecamatan 1/1: Kec. Awayan =====
+2025-10-30 05:23:21,320 - INFO - ---> Memulai scraping untuk Kecamatan: Kec. Awayan (ID: 168) <---
+2025-10-30 05:23:21,321 - INFO -   Attempt 1/300 untuk Kec. Awayan...
+2025-10-30 05:23:23,940 - INFO -     Menunggu dropdown jenjang...
+2025-10-30 05:23:24,110 - INFO -     \u2713 Dropdown jenjang ditemukan.
+2025-10-30 05:23:24,131 - INFO -     Memproses jenjang: sd (Attempt 1/3)
+2025-10-30 05:23:24,297 - INFO -     Jenjang 'sd' dipilih.
+2025-10-30 05:23:26,289 - INFO -     Mengekstrak data untuk jenjang: sd
+2025-10-30 05:23:26,289 - INFO -     Menunggu tabel sd muncul atau pesan 'empty'...
+2025-10-30 05:23:35,989 - INFO -     \u2713 Elemen tabel/empty untuk sd ditemukan.
+2025-10-30 05:23:38,196 - INFO -     Ditemukan 21 baris data sekolah untuk jenjang sd
+2025-10-30 05:23:38,199 - INFO -     \u2713 Berhasil ekstrak 21 sekolah unik untuk jenjang sd
+2025-10-30 05:23:38,199 - INFO -     Memproses jenjang: smp (Attempt 1/3)
+2025-10-30 05:23:38,427 - INFO -     Jenjang 'smp' dipilih.
+2025-10-30 05:23:39,742 - INFO -     Mengekstrak data untuk jenjang: smp
+2025-10-30 05:23:39,742 - INFO -     Menunggu tabel smp muncul atau pesan 'empty'...
+2025-10-30 05:23:48,915 - INFO -     \u2713 Elemen tabel/empty untuk smp ditemukan.
+2025-10-30 05:23:50,576 - INFO -     Ditemukan 21 baris data sekolah untuk jenjang smp
+2025-10-30 05:23:50,577 - INFO -     \u2713 Berhasil ekstrak 21 sekolah unik untuk jenjang smp
+2025-10-30 05:23:50,577 - INFO -     Memproses jenjang: sma (Attempt 1/3)
+2025-10-30 05:23:50,677 - INFO -     Jenjang 'sma' dipilih.
+2025-10-30 05:23:51,804 - INFO -     Mengekstrak data untuk jenjang: sma
+2025-10-30 05:23:51,805 - INFO -     Menunggu tabel sma muncul atau pesan 'empty'...
+2025-10-30 05:23:51,843 - INFO -     \u2713 Elemen tabel/empty untuk sma ditemukan.
+2025-10-30 05:23:54,440 - INFO -     Ditemukan 1 baris data sekolah untuk jenjang sma
+2025-10-30 05:23:54,441 - INFO -     \u2713 Berhasil ekstrak 1 sekolah unik untuk jenjang sma
+2025-10-30 05:23:54,441 - INFO -     Memproses jenjang: smk (Attempt 1/3)
+2025-10-30 05:23:54,539 - INFO -     Jenjang 'smk' dipilih.
+2025-10-30 05:23:56,257 - INFO -     Mengekstrak data untuk jenjang: smk
+2025-10-30 05:23:56,257 - INFO -     Menunggu tabel smk muncul atau pesan 'empty'...
+2025-10-30 05:24:02,461 - INFO -     \u2713 Elemen tabel/empty untuk smk ditemukan.
+2025-10-30 05:24:05,401 - INFO -     Ditemukan 2 baris data sekolah untuk jenjang smk
+2025-10-30 05:24:05,402 - INFO -     \u2713 Berhasil ekstrak 2 sekolah unik untuk jenjang smk
+2025-10-30 05:24:05,402 - INFO - ---> Selesai scraping Kec. Awayan (Attempt 1), total ditemukan 45 sekolah <---
+2025-10-30 05:24:05,403 - INFO - ==> Ditemukan 45 sekolah. Menyimpan ke DB...
+2025-10-30 05:24:05,415 - INFO - \u2713 Koneksi database (pymysql) berhasil
+2025-10-30 05:24:05,418 - INFO -     \u2713 Inserted: 30311582 - SD NEGERI AMBAKIANG HULU
+2025-10-30 05:24:05,508 - INFO -     \u2713 Inserted: 30304028 - SD NEGERI BADALUNGGA
+2025-10-30 05:24:05,540 - INFO -     \u2713 Inserted: 30304027 - SD NEGERI BADALUNGGA HILIR
+2025-10-30 05:24:05,552 - INFO -     \u2713 Inserted: 30304025 - SD NEGERI BALANTI
+2025-10-30 05:24:05,563 - INFO -     \u2713 Inserted: 30311603 - SD NEGERI BARAMBAN
+2025-10-30 05:24:05,574 - INFO -     \u2713 Inserted: 30311602 - SD NEGERI BARU
+2025-10-30 05:24:05,586 - INFO -     \u2713 Inserted: 30311584 - SD NEGERI BAYUR
+2025-10-30 05:24:05,597 - INFO -     \u2713 Inserted: 30311586 - SD NEGERI MANINGAU
+2025-10-30 05:24:05,608 - INFO -     \u2713 Inserted: 30303796 - SD NEGERI MERAH
+2025-10-30 05:24:05,619 - INFO -     \u2713 Inserted: 30303799 - SD NEGERI MUARA JAYA
+2025-10-30 05:24:05,631 - INFO -     \u2713 Inserted: 30303821 - SD NEGERI NUNGKA
+2025-10-30 05:24:05,642 - INFO -     \u2713 Inserted: 30303814 - SD NEGERI PEMATANG
+2025-10-30 05:24:05,655 - INFO -     \u2713 Inserted: 30303812 - SD NEGERI PIYAIT
+2025-10-30 05:24:05,667 - INFO -     \u2713 Inserted: 30303857 - SD NEGERI PULANTAN
+2025-10-30 05:24:05,678 - INFO -     \u2713 Inserted: 30303920 - SD NEGERI PULAU KAMBANG
+2025-10-30 05:24:05,690 - INFO -     \u2713 Inserted: 30303904 - SD NEGERI PUTAT BASIUN
+2025-10-30 05:24:05,703 - INFO -     \u2713 Inserted: 30303906 - SD NEGERI SUNGAI PUMPUNG
+2025-10-30 05:24:05,712 - INFO -     \u2713 Inserted: 30303866 - SD NEGERI TUNDAKAN
+2025-10-30 05:24:05,723 - INFO -     \u2713 Inserted: 30303865 - SD NEGERI TUNDI
+2025-10-30 05:24:05,736 - INFO -     \u2713 Inserted: 30303863 - SD NEGERI UUNGAN
+2025-10-30 05:24:05,747 - INFO -     \u2713 Inserted: 30303862 - SD NEGERI WANGKILI
+2025-10-30 05:24:05,758 - INFO -     \u21bb Updated: 30311582 - SD NEGERI AMBAKIANG HULU
+2025-10-30 05:24:05,772 - INFO -     \u21bb Updated: 30304028 - SD NEGERI BADALUNGGA
+2025-10-30 05:24:05,780 - INFO -     \u21bb Updated: 30304027 - SD NEGERI BADALUNGGA HILIR
+2025-10-30 05:24:05,792 - INFO -     \u21bb Updated: 30304025 - SD NEGERI BALANTI
+2025-10-30 05:24:05,807 - INFO -     \u21bb Updated: 30311603 - SD NEGERI BARAMBAN
+2025-10-30 05:24:05,815 - INFO -     \u21bb Updated: 30311602 - SD NEGERI BARU
+2025-10-30 05:24:05,826 - INFO -     \u21bb Updated: 30311584 - SD NEGERI BAYUR
+2025-10-30 05:24:05,838 - INFO -     \u21bb Updated: 30311586 - SD NEGERI MANINGAU
+2025-10-30 05:24:05,849 - INFO -     \u21bb Updated: 30303796 - SD NEGERI MERAH
+2025-10-30 05:24:05,861 - INFO -     \u21bb Updated: 30303799 - SD NEGERI MUARA JAYA
+2025-10-30 05:24:05,872 - INFO -     \u21bb Updated: 30303821 - SD NEGERI NUNGKA
+2025-10-30 05:24:05,882 - INFO -     \u21bb Updated: 30303814 - SD NEGERI PEMATANG
+2025-10-30 05:24:05,893 - INFO -     \u21bb Updated: 30303812 - SD NEGERI PIYAIT
+2025-10-30 05:24:05,904 - INFO -     \u21bb Updated: 30303857 - SD NEGERI PULANTAN
+2025-10-30 05:24:05,916 - INFO -     \u21bb Updated: 30303920 - SD NEGERI PULAU KAMBANG
+2025-10-30 05:24:05,928 - INFO -     \u21bb Updated: 30303904 - SD NEGERI PUTAT BASIUN
+2025-10-30 05:24:05,938 - INFO -     \u21bb Updated: 30303906 - SD NEGERI SUNGAI PUMPUNG
+2025-10-30 05:24:05,951 - INFO -     \u21bb Updated: 30303866 - SD NEGERI TUNDAKAN
+2025-10-30 05:24:05,961 - INFO -     \u21bb Updated: 30303865 - SD NEGERI TUNDI
+2025-10-30 05:24:05,973 - INFO -     \u21bb Updated: 30303863 - SD NEGERI UUNGAN
+2025-10-30 05:24:05,986 - INFO -     \u21bb Updated: 30303862 - SD NEGERI WANGKILI
+2025-10-30 05:24:05,995 - INFO -     \u2713 Inserted: 30305425 - SMAN 1 AWAYAN
+2025-10-30 05:24:06,007 - INFO -     \u2713 Inserted: 30303873 - SMP NEGERI 1 AWAYAN
+2025-10-30 05:24:06,021 - INFO -     \u2713 Inserted: 30311636 - SMP NEGERI 4 AWAYAN
+2025-10-30 05:24:06,030 - INFO - \u2713 Koneksi database (pymysql) berhasil
+2025-10-30 05:24:06,039 - INFO - \u2713 Log import_log ID 321 diperbarui: status=running
+2025-10-30 05:24:06,040 - INFO - ----- Jeda sebelum kecamatan berikutnya -----
+2025-10-30 05:24:10,589 - INFO - \u2713 Koneksi database (pymysql) berhasil
+2025-10-30 05:24:10,669 - INFO - \u2713 Log import_log ID 321 diperbarui: status=completed
+2025-10-30 05:24:10,671 - INFO - ================================================================================
+2025-10-30 05:24:10,672 - INFO - PROSES SEKOLAH SELESAI
+2025-10-30 05:24:10,672 - INFO - Total Kecamatan Diproses: 1
+2025-10-30 05:24:10,673 - INFO - Kecamatan Sukses: 1
+2025-10-30 05:24:10,673 - INFO - Kecamatan Gagal: 0
+2025-10-30 05:24:10,673 - INFO - Total Sekolah Disimpan/Update: 45
+2025-10-30 05:24:10,674 - INFO - ================================================================================
+2025-10-30 05:24:10,675 - INFO - \u2713 Driver Selenium ditutup
+2025-10-30 05:24:10,676 - INFO - >>> Script sekolah selesai <<<
+2025-10-30 05:24:10,680 - INFO - ensuring close

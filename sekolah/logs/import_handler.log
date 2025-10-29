@@ -1,0 +1,12 @@
+[2025-10-26 07:02:43] Menjalankan: ^"C:^\Users^\Lycoris^\AppData^\Local^\Programs^\Python^\Python312^\python.exe^" ^"C:^\laragon^\www^\dapokalsel^\sekolah^\import_url_main.pyw^" --process_type=all --max_retries=3
+[2025-10-26 07:02:43] Hasil: {"status":"error","process_type":"main","command":"^\"C:^\\Users^\\Lycoris^\\AppData^\\Local^\\Programs^\\Python^\\Python312^\\python.exe^\" ^\"C:^\\laragon^\\www^\\dapokalsel^\\sekolah^\\import_url_main.pyw^\" --process_type=all --max_retries=3","output":"The system cannot find the path specified.","return_code":1}
+
+[2025-10-26 07:02:48] Menjalankan: ^"C:^\Users^\Lycoris^\AppData^\Local^\Programs^\Python^\Python312^\python.exe^" ^"C:^\laragon^\www^\dapokalsel^\sekolah^\import_url_main.pyw^" --process_type=all --max_retries=3
+[2025-10-26 07:02:48] Hasil: {"status":"error","process_type":"main","command":"^\"C:^\\Users^\\Lycoris^\\AppData^\\Local^\\Programs^\\Python^\\Python312^\\python.exe^\" ^\"C:^\\laragon^\\www^\\dapokalsel^\\sekolah^\\import_url_main.pyw^\" --process_type=all --max_retries=3","output":"The system cannot find the path specified.","return_code":1}
+
+[2025-10-26 07:02:50] Menjalankan: ^"C:^\Users^\Lycoris^\AppData^\Local^\Programs^\Python^\Python312^\python.exe^" ^"C:^\laragon^\www^\dapokalsel^\sekolah^\import_url_main.pyw^" --process_type=all --max_retries=3
+[2025-10-26 07:02:50] Hasil: {"status":"error","process_type":"main","command":"^\"C:^\\Users^\\Lycoris^\\AppData^\\Local^\\Programs^\\Python^\\Python312^\\python.exe^\" ^\"C:^\\laragon^\\www^\\dapokalsel^\\sekolah^\\import_url_main.pyw^\" --process_type=all --max_retries=3","output":"The system cannot find the path specified.","return_code":1}
+
+[2025-10-26 07:03:02] Menjalankan: ^"C:^\Users^\Lycoris^\AppData^\Local^\Programs^\Python^\Python312^\python.exe^" ^"C:^\laragon^\www^\dapokalsel^\sekolah^\import_url_main.pyw^" --process_type=all --max_retries=3
+[2025-10-26 07:03:02] Hasil: {"status":"error","process_type":"main","command":"^\"C:^\\Users^\\Lycoris^\\AppData^\\Local^\\Programs^\\Python^\\Python312^\\python.exe^\" ^\"C:^\\laragon^\\www^\\dapokalsel^\\sekolah^\\import_url_main.pyw^\" --process_type=all --max_retries=3","output":"The system cannot find the path specified.","return_code":1}
+

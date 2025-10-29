@@ -1,0 +1,152 @@
+2025-10-29 09:16:30,607 - INFO - ================================================================================
+2025-10-29 09:16:30,608 - INFO - >>> [REFACTOR - Konsisten v4 - Fix datetime] main_scraper.pyw dimulai <<<
+2025-10-29 09:16:30,608 - INFO - Arguments: ['main_scraper.pyw', '--log_id=27', '--user_id=1', '--driver_path=C:\\laragon\\www\\dapokalsel\\driver\\chromedriver.exe']
+2025-10-29 09:16:30,608 - INFO - Python sys.path includes: C:\laragon\www\dapokalsel
+2025-10-29 09:16:31,181 - INFO - \u2713 Library & Helper berhasil diimport dari subfolder 'sekolah'
+2025-10-29 09:16:31,182 - INFO - Parsed arguments:
+2025-10-29 09:16:31,182 - INFO -   - log_id: 27
+2025-10-29 09:16:31,183 - INFO -   - user_id: 1
+2025-10-29 09:16:31,183 - INFO -   - driver_path: C:\laragon\www\dapokalsel\driver\chromedriver.exe
+2025-10-29 09:16:31,183 - INFO -   - max_retries_per_url: 300
+2025-10-29 09:16:31,188 - INFO - \u2713 Koneksi database (pymysql) berhasil
+2025-10-29 09:16:31,189 - INFO - \u2713 Ditemukan 1 URL aktif dari 1 ID di log untuk diproses.
+2025-10-29 09:16:31,191 - INFO - Folder batch dibuat/ditemukan: C:\laragon\www\dapokalsel\downloads_main\2025-10-29_09-16-31
+2025-10-29 09:16:31,193 - INFO - \u2713 Koneksi database (pymysql) berhasil
+2025-10-29 09:16:31,227 - INFO - \u2713 Log entry 27 diperbarui ke status: running
+2025-10-29 09:16:31,229 - INFO - Mempersiapkan Selenium Driver...
+2025-10-29 09:16:31,230 - INFO - ==================================================
+2025-10-29 09:16:31,230 - INFO - \U0001f680 Memulai Setup Driver Selenium (v4 - Fix Retry & Headless)...
+2025-10-29 09:16:31,231 - INFO - Mencoba membersihkan proses chromedriver/chrome lama...
+2025-10-29 09:16:32,056 - INFO - \u2713 Driver Path: C:\laragon\www\dapokalsel\driver\chromedriver.exe
+2025-10-29 09:16:32,056 - INFO - \u2713 User Data Dir akan menggunakan: C:\laragon\www\dapokalsel\temp\chrome_profile_selenium
+2025-10-29 09:16:32,056 - INFO - Mencoba inisialisasi uc.Chrome()...
+2025-10-29 09:16:32,056 - INFO - --- Attempt Inisialisasi Driver ke-1 ---
+2025-10-29 09:16:32,056 - INFO - Mencari chrome.exe...
+2025-10-29 09:16:32,057 - INFO - \u2713 chrome.exe ditemukan di: C:\Program Files\Google\Chrome\Application\chrome.exe
+2025-10-29 09:16:32,057 - INFO - \u2713 Binary Location diset ke: C:\Program Files\Google\Chrome\Application\chrome.exe
+2025-10-29 09:16:32,093 - WARNING - could not detect version_main.therefore, we are assuming it is chrome 108 or higher
+2025-10-29 09:16:33,144 - INFO - setting properties for headless
+2025-10-29 09:16:33,144 - INFO - \u2713 Driver Selenium berhasil diinisialisasi (Attempt 1).
+2025-10-29 09:16:33,148 - INFO - ==================================================
+2025-10-29 09:16:33,149 - INFO - 
+--- Memulai Proses Scraping untuk 1 URL ---
+2025-10-29 09:16:33,149 - INFO - --> Memulai proses untuk: SD NEGERI BADALUNGGA HILIR (https://dapo.kemendikdasmen.go.id/sekolah/2ABB3BB2692592F0A4B6)
+2025-10-29 09:16:33,149 - INFO -     Attempt 1/300...
+2025-10-29 09:16:33,149 - INFO -       Membuka halaman Dapodik: https://dapo.kemendikdasmen.go.id/sekolah/2ABB3BB2692592F0A4B6
+2025-10-29 09:17:34,239 - ERROR -       \u2717 Timeout menunggu elemen kunci di halaman Dapodik https://dapo.kemendikdasmen.go.id/sekolah/2ABB3BB2692592F0A4B6.
+2025-10-29 09:17:34,239 - ERROR -     \u2717 Gagal pada attempt 1 untuk SD NEGERI BADALUNGGA HILIR: Message: 
+
+2025-10-29 09:17:34,240 - INFO -       Mencoba lagi dalam 13.6 detik...
+2025-10-29 09:17:48,042 - INFO -     Attempt 2/300...
+2025-10-29 09:17:48,043 - INFO -       Membuka halaman Dapodik: https://dapo.kemendikdasmen.go.id/sekolah/2ABB3BB2692592F0A4B6
+2025-10-29 09:18:48,631 - ERROR -       \u2717 Timeout menunggu elemen kunci di halaman Dapodik https://dapo.kemendikdasmen.go.id/sekolah/2ABB3BB2692592F0A4B6.
+2025-10-29 09:18:48,632 - ERROR -     \u2717 Gagal pada attempt 2 untuk SD NEGERI BADALUNGGA HILIR: Message: 
+
+2025-10-29 09:18:48,632 - INFO -       Mencoba lagi dalam 13.6 detik...
+2025-10-29 09:19:02,487 - INFO -     Attempt 3/300...
+2025-10-29 09:19:02,489 - INFO -       Membuka halaman Dapodik: https://dapo.kemendikdasmen.go.id/sekolah/2ABB3BB2692592F0A4B6
+2025-10-29 09:19:07,374 - INFO -       \u2713 Halaman Dapodik utama termuat.
+2025-10-29 09:19:07,500 - INFO -       \u2713 Nama Sekolah ditemukan: SD NEGERI BADALUNGGA HILIR
+2025-10-29 09:19:07,542 - INFO -       \u2713 Link download Excel ditemukan: https://dapo.kemendikdasmen.go.id/getExcel/getProfilSekolah?semester_id=20251&sekolah_id=2ABB3BB2692592F0A4B6
+2025-10-29 09:19:07,543 - INFO -       Mencoba mengunduh Excel...
+2025-10-29 09:19:20,457 - ERROR -       \u2717 Gagal mengunduh file dari https://dapo.kemendikdasmen.go.id/getExcel/getProfilSekolah?semester_id=20251&sekolah_id=2ABB3BB2692592F0A4B6: 404 Client Error: Not Found for url: https://dapo.kemendikdasmen.go.id/getExcel/getProfilSekolah?semester_id=20251&sekolah_id=2ABB3BB2692592F0A4B6
+2025-10-29 09:19:20,462 - ERROR -     \u2717 Gagal pada attempt 3 untuk SD NEGERI BADALUNGGA HILIR: Gagal mengunduh file Excel dari https://dapo.kemendikdasmen.go.id/getExcel/getProfilSekolah?semester_id=20251&sekolah_id=2ABB3BB2692592F0A4B6
+2025-10-29 09:19:20,462 - INFO -       Mencoba lagi dalam 13.6 detik...
+2025-10-29 09:19:34,185 - INFO -     Attempt 4/300...
+2025-10-29 09:19:34,186 - INFO -       Membuka halaman Dapodik: https://dapo.kemendikdasmen.go.id/sekolah/2ABB3BB2692592F0A4B6
+2025-10-29 09:19:36,658 - INFO -       \u2713 Halaman Dapodik utama termuat.
+2025-10-29 09:19:36,747 - INFO -       \u2713 Nama Sekolah ditemukan: SD NEGERI BADALUNGGA HILIR
+2025-10-29 09:19:36,781 - INFO -       \u2713 Link download Excel ditemukan: https://dapo.kemendikdasmen.go.id/getExcel/getProfilSekolah?semester_id=20251&sekolah_id=2ABB3BB2692592F0A4B6
+2025-10-29 09:19:36,781 - INFO -       Mencoba mengunduh Excel...
+2025-10-29 09:19:59,856 - ERROR -       \u2717 Gagal mengunduh file dari https://dapo.kemendikdasmen.go.id/getExcel/getProfilSekolah?semester_id=20251&sekolah_id=2ABB3BB2692592F0A4B6: 404 Client Error: Not Found for url: https://dapo.kemendikdasmen.go.id/getExcel/getProfilSekolah?semester_id=20251&sekolah_id=2ABB3BB2692592F0A4B6
+2025-10-29 09:19:59,863 - ERROR -     \u2717 Gagal pada attempt 4 untuk SD NEGERI BADALUNGGA HILIR: Gagal mengunduh file Excel dari https://dapo.kemendikdasmen.go.id/getExcel/getProfilSekolah?semester_id=20251&sekolah_id=2ABB3BB2692592F0A4B6
+2025-10-29 09:19:59,863 - INFO -       Mencoba lagi dalam 13.6 detik...
+2025-10-29 09:20:13,589 - INFO -     Attempt 5/300...
+2025-10-29 09:20:13,590 - INFO -       Membuka halaman Dapodik: https://dapo.kemendikdasmen.go.id/sekolah/2ABB3BB2692592F0A4B6
+2025-10-29 09:20:16,597 - INFO -       \u2713 Halaman Dapodik utama termuat.
+2025-10-29 09:20:16,645 - INFO -       \u2713 Nama Sekolah ditemukan: SD NEGERI BADALUNGGA HILIR
+2025-10-29 09:20:16,664 - INFO -       \u2713 Link download Excel ditemukan: https://dapo.kemendikdasmen.go.id/getExcel/getProfilSekolah?semester_id=20251&sekolah_id=2ABB3BB2692592F0A4B6
+2025-10-29 09:20:16,665 - INFO -       Mencoba mengunduh Excel...
+2025-10-29 09:20:29,388 - ERROR -       \u2717 Gagal mengunduh file dari https://dapo.kemendikdasmen.go.id/getExcel/getProfilSekolah?semester_id=20251&sekolah_id=2ABB3BB2692592F0A4B6: 404 Client Error: Not Found for url: https://dapo.kemendikdasmen.go.id/getExcel/getProfilSekolah?semester_id=20251&sekolah_id=2ABB3BB2692592F0A4B6
+2025-10-29 09:20:29,392 - ERROR -     \u2717 Gagal pada attempt 5 untuk SD NEGERI BADALUNGGA HILIR: Gagal mengunduh file Excel dari https://dapo.kemendikdasmen.go.id/getExcel/getProfilSekolah?semester_id=20251&sekolah_id=2ABB3BB2692592F0A4B6
+2025-10-29 09:20:29,392 - INFO -       Mencoba lagi dalam 13.6 detik...
+2025-10-29 09:20:43,197 - INFO -     Attempt 6/300...
+2025-10-29 09:20:43,199 - INFO -       Membuka halaman Dapodik: https://dapo.kemendikdasmen.go.id/sekolah/2ABB3BB2692592F0A4B6
+2025-10-29 09:21:44,283 - ERROR -       \u2717 Timeout menunggu elemen kunci di halaman Dapodik https://dapo.kemendikdasmen.go.id/sekolah/2ABB3BB2692592F0A4B6.
+2025-10-29 09:21:44,284 - ERROR -     \u2717 Gagal pada attempt 6 untuk SD NEGERI BADALUNGGA HILIR: Message: 
+
+2025-10-29 09:21:44,284 - INFO -       Mencoba lagi dalam 13.6 detik...
+2025-10-29 09:21:58,048 - INFO -     Attempt 7/300...
+2025-10-29 09:21:58,049 - INFO -       Membuka halaman Dapodik: https://dapo.kemendikdasmen.go.id/sekolah/2ABB3BB2692592F0A4B6
+2025-10-29 09:21:59,826 - INFO -       \u2713 Halaman Dapodik utama termuat.
+2025-10-29 09:21:59,883 - INFO -       \u2713 Nama Sekolah ditemukan: SD NEGERI BADALUNGGA HILIR
+2025-10-29 09:21:59,903 - INFO -       \u2713 Link download Excel ditemukan: https://dapo.kemendikdasmen.go.id/getExcel/getProfilSekolah?semester_id=20251&sekolah_id=2ABB3BB2692592F0A4B6
+2025-10-29 09:21:59,903 - INFO -       Mencoba mengunduh Excel...
+2025-10-29 09:22:41,647 - ERROR -       \u2717 Gagal mengunduh file dari https://dapo.kemendikdasmen.go.id/getExcel/getProfilSekolah?semester_id=20251&sekolah_id=2ABB3BB2692592F0A4B6: 404 Client Error: Not Found for url: https://dapo.kemendikdasmen.go.id/getExcel/getProfilSekolah?semester_id=20251&sekolah_id=2ABB3BB2692592F0A4B6
+2025-10-29 09:22:41,653 - ERROR -     \u2717 Gagal pada attempt 7 untuk SD NEGERI BADALUNGGA HILIR: Gagal mengunduh file Excel dari https://dapo.kemendikdasmen.go.id/getExcel/getProfilSekolah?semester_id=20251&sekolah_id=2ABB3BB2692592F0A4B6
+2025-10-29 09:22:41,654 - INFO -       Mencoba lagi dalam 13.6 detik...
+2025-10-29 09:22:55,491 - INFO -     Attempt 8/300...
+2025-10-29 09:22:55,492 - INFO -       Membuka halaman Dapodik: https://dapo.kemendikdasmen.go.id/sekolah/2ABB3BB2692592F0A4B6
+2025-10-29 09:23:55,913 - ERROR -       \u2717 Timeout menunggu elemen kunci di halaman Dapodik https://dapo.kemendikdasmen.go.id/sekolah/2ABB3BB2692592F0A4B6.
+2025-10-29 09:23:55,914 - ERROR -     \u2717 Gagal pada attempt 8 untuk SD NEGERI BADALUNGGA HILIR: Message: 
+
+2025-10-29 09:23:55,915 - INFO -       Mencoba lagi dalam 13.6 detik...
+2025-10-29 09:24:09,705 - INFO -     Attempt 9/300...
+2025-10-29 09:24:09,705 - INFO -       Membuka halaman Dapodik: https://dapo.kemendikdasmen.go.id/sekolah/2ABB3BB2692592F0A4B6
+2025-10-29 09:24:11,545 - INFO -       \u2713 Halaman Dapodik utama termuat.
+2025-10-29 09:24:11,619 - INFO -       \u2713 Nama Sekolah ditemukan: SD NEGERI BADALUNGGA HILIR
+2025-10-29 09:24:11,648 - INFO -       \u2713 Link download Excel ditemukan: https://dapo.kemendikdasmen.go.id/getExcel/getProfilSekolah?semester_id=20251&sekolah_id=2ABB3BB2692592F0A4B6
+2025-10-29 09:24:11,648 - INFO -       Mencoba mengunduh Excel...
+2025-10-29 09:24:34,597 - ERROR -       \u2717 Gagal mengunduh file dari https://dapo.kemendikdasmen.go.id/getExcel/getProfilSekolah?semester_id=20251&sekolah_id=2ABB3BB2692592F0A4B6: 404 Client Error: Not Found for url: https://dapo.kemendikdasmen.go.id/getExcel/getProfilSekolah?semester_id=20251&sekolah_id=2ABB3BB2692592F0A4B6
+2025-10-29 09:24:34,612 - ERROR -     \u2717 Gagal pada attempt 9 untuk SD NEGERI BADALUNGGA HILIR: Gagal mengunduh file Excel dari https://dapo.kemendikdasmen.go.id/getExcel/getProfilSekolah?semester_id=20251&sekolah_id=2ABB3BB2692592F0A4B6
+2025-10-29 09:24:34,613 - INFO -       Mencoba lagi dalam 13.6 detik...
+2025-10-29 09:24:48,311 - INFO -     Attempt 10/300...
+2025-10-29 09:24:48,315 - INFO -       Membuka halaman Dapodik: https://dapo.kemendikdasmen.go.id/sekolah/2ABB3BB2692592F0A4B6
+2025-10-29 09:25:49,329 - ERROR -       \u2717 Timeout menunggu elemen kunci di halaman Dapodik https://dapo.kemendikdasmen.go.id/sekolah/2ABB3BB2692592F0A4B6.
+2025-10-29 09:25:49,329 - ERROR -     \u2717 Gagal pada attempt 10 untuk SD NEGERI BADALUNGGA HILIR: Message: 
+
+2025-10-29 09:25:49,329 - INFO -       Mencoba lagi dalam 13.6 detik...
+2025-10-29 09:26:03,034 - INFO -     Attempt 11/300...
+2025-10-29 09:26:03,035 - INFO -       Membuka halaman Dapodik: https://dapo.kemendikdasmen.go.id/sekolah/2ABB3BB2692592F0A4B6
+2025-10-29 09:27:03,826 - ERROR -       \u2717 Timeout menunggu elemen kunci di halaman Dapodik https://dapo.kemendikdasmen.go.id/sekolah/2ABB3BB2692592F0A4B6.
+2025-10-29 09:27:03,827 - ERROR -     \u2717 Gagal pada attempt 11 untuk SD NEGERI BADALUNGGA HILIR: Message: 
+
+2025-10-29 09:27:03,827 - INFO -       Mencoba lagi dalam 13.6 detik...
+2025-10-29 09:27:17,513 - INFO -     Attempt 12/300...
+2025-10-29 09:27:17,513 - INFO -       Membuka halaman Dapodik: https://dapo.kemendikdasmen.go.id/sekolah/2ABB3BB2692592F0A4B6
+2025-10-29 09:27:19,527 - INFO -       \u2713 Halaman Dapodik utama termuat.
+2025-10-29 09:27:19,597 - INFO -       \u2713 Nama Sekolah ditemukan: SD NEGERI BADALUNGGA HILIR
+2025-10-29 09:27:19,617 - INFO -       \u2713 Link download Excel ditemukan: https://dapo.kemendikdasmen.go.id/getExcel/getProfilSekolah?semester_id=20251&sekolah_id=2ABB3BB2692592F0A4B6
+2025-10-29 09:27:19,617 - INFO -       Mencoba mengunduh Excel...
+2025-10-29 09:27:26,495 - INFO -       \u2713 File berhasil diunduh ke: profil_SD NEGERI BADALUNGGA HILIR_1761704839.xlsx
+2025-10-29 09:27:26,518 - INFO -       \u2713 Link 'Sekolah Kita' ditemukan: http://sekolah.data.kemdikbud.go.id/index.php/chome/profil/c0f64953-30f5-e011-8dcc-8946a9d0f26a
+2025-10-29 09:27:26,518 - INFO -       Membuka halaman Sekolah Kita: http://sekolah.data.kemdikbud.go.id/index.php/chome/profil/c0f64953-30f5-e011-8dcc-8946a9d0f26a
+2025-10-29 09:27:38,418 - INFO -       \u2713 Halaman Sekolah Kita termuat.
+2025-10-29 09:27:39,935 - INFO -       \u2713 Koordinat ditemukan: -2.406400000000, 115.561000000000
+2025-10-29 09:27:39,940 - INFO -       \u2713 Berhasil menyimpan data tambahan: info_SD NEGERI BADALUNGGA HILIR_1761704839.json
+2025-10-29 09:27:39,940 - INFO - ===> BERHASIL LENGKAP untuk: SD NEGERI BADALUNGGA HILIR (ID: 132) <===
+2025-10-29 09:27:39,949 - INFO - \u2713 Koneksi database (pymysql) berhasil
+2025-10-29 09:27:39,985 - INFO - \u2713 Log entry 27 diperbarui ke status: running
+2025-10-29 09:27:39,985 - INFO - ----- Jeda 3.1 detik -----
+2025-10-29 09:27:43,537 - INFO - \u2713 Koneksi database (pymysql) berhasil
+2025-10-29 09:27:43,639 - INFO - \u2713 Log entry 27 diperbarui ke status: completed
+2025-10-29 09:27:43,640 - INFO - ================================================================================
+2025-10-29 09:27:43,640 - INFO - PROSES SCRAPING 'downloads_main' SELESAI
+2025-10-29 09:27:43,640 - INFO - Status Final: COMPLETED
+2025-10-29 09:27:43,640 - INFO - Total URL di Log Awal: 1
+2025-10-29 09:27:43,640 - INFO - URL Diproses: 1
+2025-10-29 09:27:43,640 - INFO - Sukses: 1
+2025-10-29 09:27:43,641 - INFO - Gagal: 0
+2025-10-29 09:27:43,641 - INFO - Pesan Akhir: Semua 1 URL berhasil diproses.
+2025-10-29 09:27:43,641 - INFO - ================================================================================
+2025-10-29 09:27:43,641 - INFO - \u2713 Driver Selenium ditutup
+2025-10-29 09:27:43,642 - INFO - >>> Script 'downloads_main' selesai <<<
+2025-10-29 09:27:43,648 - INFO - ensuring close
+2025-10-29 09:27:43,661 - INFO - Terminated zombie process: chrome.exe (PID 1132)
+2025-10-29 09:27:43,664 - INFO - Terminated zombie process: chrome.exe (PID 4140)
+2025-10-29 09:27:43,708 - INFO - Terminated zombie process: chrome.exe (PID 15440)
+2025-10-29 09:27:43,739 - INFO - Terminated zombie process: chrome.exe (PID 17476)
+2025-10-29 09:27:43,771 - INFO - Terminated zombie process: chrome.exe (PID 20452)
+2025-10-29 09:27:43,798 - INFO - Terminated zombie process: chrome.exe (PID 21476)
+2025-10-29 09:27:43,823 - INFO - Terminated zombie process: chrome.exe (PID 21596)
+2025-10-29 09:27:43,824 - INFO - Cleaned up 7 zombie browser/driver processes.

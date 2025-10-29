@@ -1,637 +1,532 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+"""
+===============================================================
+IMPORT URL SEKOLAH - VERSI REFACTOR (ROMBAK TOTAL v3 - Robust)
+===============================================================
+- Menggunakan db_helper.py dan driver_helper.py
+- Menerima --kecamatan_id (banyak) dari import_handler.php
+- Iterasi jenjang SPESIFIK (SD, SMP, SMA, SMK)
+- Strategi WebDriverWait yang lebih fleksibel untuk tabel refresh
+- Mencoba ID tabel #dataTables dan #DataTables_Table_0
+- Menambahkan refresh halaman otomatis jika jenjang gagal total
+- Fix: Import 'random'
+===============================================================
+"""
+
 import sys
-import time
+import os
 import logging
 import argparse
-import json
-import subprocess
-from bs4 import BeautifulSoup
-import undetected_chromedriver as uc
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait, Select
-from selenium.webdriver.support import expected_conditions as EC
+import time
+import re
+import random # <-- FIX: Import random
 from urllib.parse import urljoin
-from selenium.common.exceptions import TimeoutException, NoSuchElementException, WebDriverException, StaleElementReferenceException
-import random
-import os
 
-# Setup logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
+# ----------------------------------------------------------
+# 1. SETUP LOGGING & IMPORTS
+# ----------------------------------------------------------
+log_file = r'C:\laragon\www\dapokalsel\log_sekolah.txt'
+logging.basicConfig(
+    filename=log_file,
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
 
-# Configuration
+logging.info("=" * 80)
+logging.info(">>> [ROMBAK TOTAL v3 - Robust] import_url_sekolah.pyw dimulai <<<")
+logging.info(f"Arguments: {sys.argv}")
+
+try:
+    from bs4 import BeautifulSoup
+    from selenium.webdriver.common.by import By
+    from selenium.webdriver.support.ui import WebDriverWait, Select
+    from selenium.webdriver.support import expected_conditions as EC
+    from selenium.common.exceptions import TimeoutException, StaleElementReferenceException, NoSuchElementException
+    
+    # Impor helper terpusat
+    import db_helper
+    import driver_helper
+    
+    logging.info("✓ Library & Helper berhasil diimport")
+
+except ImportError as e:
+    logging.error(f"✗ Gagal import library: {e}")
+    sys.exit(1)
+
+# ----------------------------------------------------------
+# 2. KONFIGURASI & ARGUMEN
+# ----------------------------------------------------------
+parser = argparse.ArgumentParser(description='Import URL Sekolah dari Dapodik per Kecamatan')
+parser.add_argument('--kecamatan_id', type=str, required=True, help='Comma-separated kecamatan_scrape_ids')
+parser.add_argument('--user_id', type=int, default=1, help='User ID')
+parser.add_argument('--max_retries', type=int, default=3, help='Max retries per kecamatan')
+parser.add_argument('--driver_path', type=str, required=True, help='Path absolut ke chromedriver.exe')
+parser.add_argument('--log_id', type=int, required=True, help='ID dari import_log untuk diupdate')
+
+args = parser.parse_args()
+log_id = args.log_id 
+
+logging.info(f"Parsed arguments:")
+logging.info(f"  - kecamatan_id: {args.kecamatan_id}")
+logging.info(f"  - driver_path: {args.driver_path}")
+logging.info(f"  - log_id: {args.log_id}")
+
 BASE_URL = "https://dapo.kemendikdasmen.go.id"
-PAGE_LOAD_TIMEOUT = 600
-RETRY_DELAY_SECONDS = 13
-SEKOLAH_RETRY_DELAY = 13
+JENJANG_SEKOLAH = ['sd', 'smp', 'sma', 'smk'] 
+ELEMENT_TIMEOUT = 45 # Naikkan timeout tunggu elemen
+TABLE_REFRESH_TIMEOUT = 60 # Naikkan timeout tunggu refresh tabel
 
-# Jenjang sekolah yang akan di-scrape
-JENJANG_SEKOLAH = ['sd', 'smp', 'sma', 'smk']
-
-def execute_php_query(query, params=None):
-    """Execute PHP query through subprocess for database operations"""
+# ----------------------------------------------------------
+# 3. FUNGSI HELPER DATABASE (Sama seperti sebelumnya)
+# ----------------------------------------------------------
+def get_kecamatan_to_process(kecamatan_ids_str):
+    conn = db_helper.get_db_connection()
+    # ... (kode fungsi ini sama seperti di versi sebelumnya) ...
+    if not conn: return []
     try:
-        if params is None:
-            params = []
-        
-        # Escape parameters for PHP
-        escaped_params = []
-        for param in params:
-            if isinstance(param, str):
-                escaped_param = param.replace("'", "\\'").replace('"', '\\"')
-                escaped_params.append(f"'{escaped_param}'")
-            else:
-                escaped_params.append(str(param))
-        
-        # Create PHP command
-        if escaped_params:
-            php_query = query.replace('?', '{}').format(*escaped_params)
-        else:
-            php_query = query
-        
-        php_code = f"""
-require_once '../helper/connection.php';
-try {{
-    $result = mysqli_query($connection, "{php_query}");
-    if ($result === false) {{
-        echo json_encode(['error' => mysqli_error($connection)]);
-    }} else {{
-        if (is_bool($result)) {{
-            echo json_encode(['success' => $result, 'affected_rows' => mysqli_affected_rows($connection)]);
-        }} else {{
-            $data = [];
-            while ($row = mysqli_fetch_assoc($result)) {{
-                $data[] = $row;
-            }}
-            echo json_encode(['success' => true, 'data' => $data]);
-        }}
-    }}
-}} catch (Exception $e) {{
-    echo json_encode(['error' => $e->getMessage()]);
-}}
-mysqli_close($connection);
-        """
-        
-        result = subprocess.run(['php', '-r', php_code], capture_output=True, text=True, cwd=os.path.dirname(__file__))
-        
-        if result.returncode != 0:
-            logger.error(f"PHP execution failed: {result.stderr}")
-            return None
-        
-        try:
-            return json.loads(result.stdout)
-        except json.JSONDecodeError as e:
-            logger.error(f"JSON decode error: {e}, Output: {result.stdout}")
-            return None
-            
+        with conn.cursor() as cursor:
+            id_list = [int(id_str) for id_str in kecamatan_ids_str.split(',')]
+            if not id_list: return []
+            placeholders = ','.join(['%s'] * len(id_list))
+            query = f"SELECT id, nama_kecamatan, url FROM kecamatan_scrape WHERE id IN ({placeholders}) AND status = 'active'" 
+            cursor.execute(query, tuple(id_list))
+            kecamatan_list = cursor.fetchall()
+            logging.info(f"✓ Ditemukan {len(kecamatan_list)} kecamatan untuk diproses")
+            return kecamatan_list
     except Exception as e:
-        logger.error(f"Error executing PHP query: {e}")
-        return None
+        logging.error(f"✗ Gagal mengambil data kecamatan: {e}")
+        return []
+    finally:
+        if conn: conn.close()
 
-def get_kecamatan_data(kecamatan_ids):
-    """Get kecamatan data from database by multiple IDs"""
-    try:
-        # Buat placeholder untuk query IN
-        placeholders = ','.join([str(id) for id in kecamatan_ids])
-        
-        query = f"""
-        SELECT id, kode_kecamatan, nama_kecamatan, url, kabupaten_scrape_id
-        FROM kecamatan_scrape
-        WHERE id IN ({placeholders}) AND status = 'active'
-        """
-        
-        result = execute_php_query(query)
-        
-        if result and result.get('success') and result.get('data'):
-            logger.info(f"Found {len(result['data'])} kecamatan records")
-            return result['data']
-        else:
-            logger.error(f"No kecamatan data found or query failed: {result}")
-            return None
-            
-    except Exception as e:
-        logger.error(f"Error getting kecamatan data: {e}")
-        return None
-
-def save_sekolah_to_db(sekolah_data_batch):
-    """Save sekolah data to database with verification"""
-    if not sekolah_data_batch:
-        return 0
-    
-    try:
-        logger.info(f"Attempting to save {len(sekolah_data_batch)} sekolah records to database")
-        
-        # First, check which records already exist
-        existing_count = 0
-        new_records = []
-        
-        for npsn, nama, url, kecamatan_id, jenjang in sekolah_data_batch:
-            # Check if record exists
-            check_query = f"SELECT id FROM sekolah_scrape WHERE npsn = '{npsn}' AND kecamatan_scrape_id = {kecamatan_id}"
-            result = execute_php_query(check_query)
-            
-            if result and result.get('success') and result.get('data'):
-                existing_count += 1
-                logger.debug(f"Sekolah {npsn} already exists, skipping")
-            else:
-                new_records.append((npsn, nama, url, kecamatan_id, jenjang))
-        
-        if existing_count > 0:
-            logger.info(f"Skipping {existing_count} existing records")
-        
-        if not new_records:
-            logger.info("All sekolah records already exist in database")
-            return 0
-        
-        # Insert new records one by one for better error handling
-        inserted_count = 0
-        for npsn, nama, url, kecamatan_id, jenjang in new_records:
-            try:
-                # Escape special characters
-                nama_escaped = nama.replace("'", "\\'").replace('"', '\\"')
-                url_escaped = url.replace("'", "\\'")
-                
-                insert_query = f"""
-                INSERT INTO sekolah_scrape (npsn, nama_sekolah, url, kecamatan_scrape_id, jenjang, status, created_at, updated_at) 
-                VALUES ('{npsn}', '{nama_escaped}', '{url_escaped}', {kecamatan_id}, '{jenjang}', 'active', NOW(), NOW())
-                """
-                
-                result = execute_php_query(insert_query)
-                if result and result.get('success'):
-                    inserted_count += 1
-                    logger.debug(f"Successfully inserted sekolah {npsn}: {nama}")
-                else:
-                    logger.error(f"Failed to insert sekolah {npsn}: {result}")
-                    
-            except Exception as e:
-                logger.error(f"Error inserting individual sekolah record {npsn}: {e}")
-                continue
-        
-        logger.info(f"Successfully inserted {inserted_count} new sekolah records")
-        return inserted_count
-        
-    except Exception as e:
-        logger.error(f"Error saving sekolah data: {e}")
-        return 0
-
-def setup_driver():
-    """Setup Chrome driver dengan opsi yang diperlukan"""
-    options = uc.ChromeOptions()
-    
-    # Opsi dasar
-    options.add_argument("--headless")
-    options.add_argument("--no-sandbox")
-    options.add_argument("--disable-dev-shm-usage")
-    options.add_argument("--disable-gpu")
-    options.add_argument("--window-size=1920,1080")
-    
-    # Opsi untuk menghindari deteksi
-    options.add_argument("--disable-extensions")
-    options.add_argument("--disable-infobars")
-    options.add_argument("--disable-notifications")
-    options.add_argument("--disable-popup-blocking")
-    options.add_argument("--disable-blink-features=AutomationControlled")
-    options.add_argument("--disable-web-security")
-    options.add_argument("--allow-running-insecure-content")
-    options.add_argument("--disable-features=VizDisplayCompositor")
-    
-    try:
-        # Coba dengan version_main=140 untuk Chrome 140.x
-        driver = uc.Chrome(options=options, version_main=140)
-        driver.set_page_load_timeout(PAGE_LOAD_TIMEOUT)
-        return driver
-    except Exception as e:
-        logger.error(f"Error setting up driver with version 140: {e}")
-        try:
-            # Fallback: biarkan auto-detect
-            driver = uc.Chrome(options=options, use_subprocess=True)
-            driver.set_page_load_timeout(PAGE_LOAD_TIMEOUT)
-            return driver
-        except Exception as e2:
-            logger.error(f"Error setting up driver with auto-detect: {e2}")
-            return None
-
-def human_like_delay():
-    """Add human-like random delay"""
-    delay = random.uniform(1.5, 3.5)
-    time.sleep(delay)
-
-def safe_click(driver, element):
-    """Safely click an element with human-like behavior"""
-    try:
-        # Scroll to element
-        driver.execute_script("arguments[0].scrollIntoView(true);", element)
-        human_like_delay()
-        
-        # Try regular click first
-        try:
-            element.click()
-        except:
-            # If regular click fails, try JavaScript click
-            driver.execute_script("arguments[0].click();", element)
-        
-        human_like_delay()
-        return True
-        
-    except Exception as e:
-        logger.error(f"Error clicking element: {e}")
-        return False
-
-def wait_for_ajax_complete(driver, timeout=30):
-    """Wait for AJAX requests to complete"""
-    try:
-        wait = WebDriverWait(driver, timeout)
-        wait.until(lambda driver: driver.execute_script("return jQuery.active == 0") if driver.execute_script("return typeof jQuery !== 'undefined'") else True)
-        return True
-    except:
-        # If jQuery is not available, wait for document ready state
-        try:
-            wait.until(lambda driver: driver.execute_script("return document.readyState") == "complete")
-            return True
-        except:
-            logger.warning("Could not confirm AJAX completion, continuing anyway")
-            return False
-
-def extract_sekolah_data_from_page(driver, jenjang, max_retries=50):
-    """Extract sekolah data from current page with retry mechanism"""
-    
-    for attempt in range(max_retries):
-        try:
-            logger.info(f"Extracting data attempt {attempt + 1}/{max_retries} for jenjang {jenjang}")
-            time.sleep(3)
-            
-            # Get page source
-            page_source = driver.page_source
-            soup = BeautifulSoup(page_source, 'html.parser')
-            
-            # Find the table - try multiple selectors
-            table = None
-            table_selectors = [
-                '#dataTables',
-                '#DataTables_Table_0',
-                'table.dataTable',
-                '.table-responsive table',
-                'table.table'
-            ]
-            
-            for selector in table_selectors:
-                try:
-                    if selector.startswith('#'):
-                        table = soup.find('table', id=selector[1:])
-                    elif selector.startswith('.'):
-                        classes = selector[1:].split('.')
-                        table = soup.find('table', class_=classes)
-                    else:
-                        table = soup.select_one(selector)
-                    
-                    if table:
-                        logger.info(f"Table found using selector: {selector}")
-                        break
-                except Exception as e:
-                    logger.debug(f"Selector {selector} failed: {e}")
-                    continue
-            
-            if not table:
-                logger.error(f"No table found for jenjang {jenjang}")
-                if attempt < max_retries - 1:
-                    time.sleep(SEKOLAH_RETRY_DELAY)
-                    continue
-                return []
-            
-            # Find tbody or get rows directly from table
-            tbody = table.find('tbody')
-            if tbody:
-                rows = tbody.find_all('tr')
-            else:
-                rows = table.find_all('tr')[1:]  # Skip header row
-            
-            # Jika ada tulisan "No data available in table" → langsung skip
-            if len(rows) == 1:
-                row_text = rows[0].get_text(strip=True)
-                if "No data available" in row_text or "Tidak ada data" in row_text:
-                    logger.warning(f"Tabel kosong untuk jenjang {jenjang}, skip jenjang ini")
-                    return None   # Flag untuk skip
-            
-            if not rows:
-                logger.warning(f"No data rows found in table for jenjang {jenjang}")
-                return []
-            
-            sekolah_data = []
-            processed_npsn = set()  # To avoid duplicates
-            
-            for row_idx, row in enumerate(rows):
-                try:
-                    cells = row.find_all('td')
-                    if len(cells) < 3:
-                        logger.debug(f"Row {row_idx} has insufficient columns: {len(cells)}")
-                        continue
-                    
-                    # Extract data based on the HTML structure observed
-                    # Assuming: Column 1 = Name+Link, Column 2 = NPSN, Column 3 = BP/Type
-                    
-                    # Get school name and URL from first column with link
-                    nama_cell = cells[1] if len(cells) > 1 else cells[0]
-                    anchor = nama_cell.find('a')
-                    
-                    if not anchor:
-                        logger.debug(f"No anchor tag found in row {row_idx}")
-                        continue
-                    
-                    nama_sekolah = anchor.get_text(strip=True)
-                    href = anchor.get('href', '').strip()
-                    
-                    if not nama_sekolah or not href:
-                        logger.debug(f"Missing name or href in row {row_idx}")
-                        continue
-                    
-                    # Build full URL
-                    full_url = urljoin(BASE_URL, href)
-                    
-                    # Get NPSN from second column (index 2)
-                    npsn_cell = cells[2] if len(cells) > 2 else None
-                    if not npsn_cell:
-                        logger.debug(f"No NPSN cell found in row {row_idx}")
-                        continue
-                    
-                    npsn = npsn_cell.get_text(strip=True)
-                    
-                    if not npsn or npsn in processed_npsn:
-                        logger.debug(f"Invalid or duplicate NPSN in row {row_idx}: {npsn}")
-                        continue
-                    
-                    # Validate NPSN format (should be numeric)
-                    try:
-                        int(npsn)
-                    except ValueError:
-                        logger.debug(f"Invalid NPSN format in row {row_idx}: {npsn}")
-                        continue
-                    
-                    processed_npsn.add(npsn)
-                    sekolah_data.append((npsn, nama_sekolah, full_url))
-                    
-                    logger.debug(f"Extracted: NPSN={npsn}, Name={nama_sekolah[:50]}...")
-                    
-                except Exception as e:
-                    logger.error(f"Error processing row {row_idx}: {e}")
-                    continue
-            
-            if sekolah_data:
-                logger.info(f"Successfully extracted {len(sekolah_data)} sekolah records for jenjang {jenjang}")
-                return sekolah_data
-            else:
-                logger.warning(f"No valid data extracted for jenjang {jenjang} on attempt {attempt + 1}")
-                if attempt < max_retries - 1:
-                    time.sleep(SEKOLAH_RETRY_DELAY)
-                
-        except Exception as e:
-            logger.error(f"Error extracting data for jenjang {jenjang} on attempt {attempt + 1}: {e}")
-            if attempt < max_retries - 1:
-                time.sleep(SEKOLAH_RETRY_DELAY)
-    
-    return []
-
-def scrape_sekolah_from_kecamatan(driver, kecamatan_data, max_retries):
-    """Scrape sekolah data from a single kecamatan with unlimited retry"""
-    
-    kecamatan_id = kecamatan_data['id']
-    nama_kecamatan = kecamatan_data['nama_kecamatan']
-    url_kecamatan = kecamatan_data['url']
-    
-    logger.info(f"Processing Kecamatan: {nama_kecamatan}")
-    logger.info(f"URL: {url_kecamatan}")
-    
-    retry_count = 0
-    total_sekolah_saved = 0
-    
-    while retry_count < max_retries:
-        try:
-            if retry_count > 0:
-                logger.info(f"Retry attempt {retry_count + 1} for {nama_kecamatan}")
-                time.sleep(SEKOLAH_RETRY_DELAY)
-            
-            # Navigate to kecamatan page
-            logger.info("Loading kecamatan page...")
-            driver.get(url_kecamatan)
-            
-            # Wait for page to load
-            time.sleep(5)
-            
-            # Check if page loaded successfully
-            try:
-                WebDriverWait(driver, 30).until(
-                    lambda driver: driver.execute_script("return document.readyState") == "complete"
-                )
-            except TimeoutException:
-                logger.warning("Page load timeout, but continuing...")
-            
-            # Process each jenjang
-            for jenjang in JENJANG_SEKOLAH:
-                jenjang_retry = 0
-                jenjang_success = False
-                
-                while jenjang_retry < 10 and not jenjang_success:
-                    try:
-                        if jenjang_retry > 0:
-                            logger.info(f"Jenjang retry {jenjang_retry + 1} for {jenjang} in {nama_kecamatan}")
-                            time.sleep(SEKOLAH_RETRY_DELAY)
-                        
-                        logger.info(f"Processing jenjang: {jenjang}")
-                        
-                        # Find and interact with jenjang dropdown
-                        dropdown_selectors = [
-                            '#selectJenjang',
-                            'select[name="jenjang"]',
-                            'select.form-control',
-                            '.form-group select'
-                        ]
-                        
-                        dropdown_element = None
-                        for selector in dropdown_selectors:
-                            try:
-                                dropdown_element = WebDriverWait(driver, 10).until(
-                                    EC.presence_of_element_located((By.CSS_SELECTOR, selector))
-                                )
-                                logger.info(f"Dropdown found with selector: {selector}")
-                                break
-                            except TimeoutException:
-                                continue
-                        
-                        if not dropdown_element:
-                            raise Exception("Jenjang dropdown not found")
-                        
-                        # Get current table reference before changing dropdown
-                        try:
-                            old_table = driver.find_element(By.CSS_SELECTOR, "table")
-                        except:
-                            old_table = None
-                        
-                        # Select jenjang
-                        select_obj = Select(dropdown_element)
-                        select_obj.select_by_value(jenjang)
-                        logger.info(f"Selected jenjang: {jenjang}")
-                        
-                        # Wait for table to refresh after dropdown selection
-                        if old_table:
-                            try:
-                                WebDriverWait(driver, 20).until(EC.staleness_of(old_table))
-                                logger.info("Table has been refreshed")
-                            except TimeoutException:
-                                logger.warning("Could not confirm table refresh, continuing...")
-                        
-                        # Wait for new table to appear
-                        try:
-                            WebDriverWait(driver, 20).until(
-                                EC.presence_of_element_located((By.CSS_SELECTOR, "table tbody tr"))
-                            )
-                        except TimeoutException:
-                            logger.warning("No table rows found, might be empty")
-                        
-                        # Wait for AJAX to complete
-                        wait_for_ajax_complete(driver)
-                        
-                        # Additional wait to ensure data is loaded
-                        time.sleep(5)
-                        
-                        # Extract data
-                        sekolah_data = extract_sekolah_data_from_page(driver, jenjang)
-                        
-                        # Flag skip jenjang karena tabel kosong
-                        if sekolah_data is None:
-                            logger.info(f"Skip jenjang {jenjang} karena tabel kosong")
-                            jenjang_success = True
-                            continue
-                        
-                        if not sekolah_data:
-                            logger.warning(f"No sekolah data found untuk jenjang {jenjang}")
-                            jenjang_success = True  # tetap anggap sukses biar lanjut ke jenjang lain
-                            continue
-                        
-                        # Add kecamatan_id and jenjang to each record
-                        sekolah_with_meta = [
-                            (npsn, nama, url, kecamatan_id, jenjang) 
-                            for npsn, nama, url in sekolah_data
-                        ]
-                        
-                        # Save to database
-                        saved_count = save_sekolah_to_db(sekolah_with_meta)
-                        total_sekolah_saved += saved_count
-                        
-                        logger.info(f"Saved {saved_count} sekolah records for jenjang {jenjang}")
-                        jenjang_success = True
-                        
-                    except Exception as e:
-                        logger.error(f"Error processing jenjang {jenjang}: {e}")
-                        jenjang_retry += 1
-                        
-                        # If too many jenjang retries, refresh page
-                        if jenjang_retry % 3 == 0 and jenjang_retry < 10:
-                            logger.info("Refreshing page due to repeated jenjang failures...")
-                            driver.get(url_kecamatan)
-                            time.sleep(5)
-                
-                if not jenjang_success:
-                    logger.error(f"Failed to process jenjang {jenjang} after retries")
-            
-            # If we reach here, consider kecamatan processing successful
-            logger.info(f"Successfully processed kecamatan {nama_kecamatan} with {total_sekolah_saved} sekolah saved")
-            return True, total_sekolah_saved, None
-            
-        except Exception as e:
-            error_message = str(e)
-            logger.error(f"Error processing kecamatan {nama_kecamatan}: {error_message}")
-            retry_count += 1
-            
-            if retry_count >= max_retries:
-                logger.error(f"Max retries reached for kecamatan {nama_kecamatan}")
-                return False, total_sekolah_saved, error_message
-    
-    return False, total_sekolah_saved, "Unknown error"
-
-def main():
-    # PERBAIKAN: Argument parser sesuai dengan perintah handler
-    parser = argparse.ArgumentParser(description='Import Sekolah dari Dapodik')
-    parser.add_argument('--kecamatan_id', type=str, required=True, help='Comma-separated kecamatan IDs yang akan di-scrape')
-    parser.add_argument('--max_retries', type=int, default=3, help='Jumlah maksimal retry')
-    args = parser.parse_args()
-    
-    # Parse kecamatan_id (bukan kecamatan_ids, sesuai handler)
-    try:
-        kecamatan_ids = [int(id.strip()) for id in args.kecamatan_id.split(',')]
-    except ValueError:
-        logger.error("Invalid kecamatan_id format. Please provide comma-separated integers.")
-        sys.exit(1)
-    
-    logger.info("="*80)
-    logger.info("STARTING SEKOLAH IMPORT")
-    logger.info("="*80)
-    logger.info(f"Kecamatan IDs: {kecamatan_ids}")
-
-    # Ambil data untuk multiple kecamatan
-    kecamatan_list = get_kecamatan_data(kecamatan_ids)
-    if not kecamatan_list:
-        logger.error("Kecamatan tidak ditemukan di database")
-        sys.exit(1)
-
-    driver = setup_driver()
-    if not driver:
-        logger.error("Gagal setup driver Chrome")
-        sys.exit(1)
-
-    # Inisialisasi counter untuk total sekolah
-    total_sekolah_saved = 0
+def save_sekolah_to_db(sekolah_data_batch, kecamatan_scrape_id):
     success_count = 0
     failed_count = 0
-    
+    conn = db_helper.get_db_connection()
+    # ... (kode fungsi ini sama seperti di versi sebelumnya) ...
+    if not conn:
+        logging.error("✗ Gagal koneksi DB saat menyimpan sekolah.")
+        return 0, len(sekolah_data_batch) 
     try:
-        # Proses setiap kecamatan
-        for kecamatan_data in kecamatan_list:
-            logger.info(f"\n{'='*60}")
-            logger.info(f"Processing: {kecamatan_data['nama_kecamatan']}")
-            logger.info(f"{'='*60}")
-            
-            success, sekolah_count, error_msg = scrape_sekolah_from_kecamatan(
-                driver, kecamatan_data, args.max_retries
-            )
-            
-            total_sekolah_saved += sekolah_count
-            
-            if success:
-                success_count += 1
-                logger.info(f"Selesai import {sekolah_count} sekolah untuk {kecamatan_data['nama_kecamatan']}")
-            else:
-                failed_count += 1
-                logger.error(f"Gagal import sekolah untuk {kecamatan_data['nama_kecamatan']}: {error_msg}")
-            
-            # Jeda antar kecamatan
-            if kecamatan_data != kecamatan_list[-1]:
-                time.sleep(3)
-        
-        # Log summary
-        logger.info("\n" + "="*80)
-        logger.info("SEKOLAH IMPORT SUMMARY")
-        logger.info("="*80)
-        logger.info(f"Total Kecamatan Processed: {len(kecamatan_list)}")
-        logger.info(f"Successful: {success_count}")
-        logger.info(f"Failed: {failed_count}")
-        logger.info(f"Total Sekolah Saved: {total_sekolah_saved}")
-        logger.info("="*80)
-        
-        if failed_count == 0:
-            logger.info("Sekolah import completed successfully!")
-            sys.exit(0)
-        else:
-            logger.error(f"Sekolah import completed with {failed_count} failures.")
-            sys.exit(1)
-            
+        with conn.cursor() as cursor:
+            for sek in sekolah_data_batch:
+                try:
+                    cursor.execute("SELECT id FROM sekolah_scrape WHERE kecamatan_scrape_id = %s AND npsn = %s", (kecamatan_scrape_id, sek['npsn']))
+                    existing = cursor.fetchone()
+                    if existing:
+                        cursor.execute("UPDATE sekolah_scrape SET nama_sekolah = %s, url = %s, jenjang = %s, status = 'active', updated_at = NOW() WHERE id = %s", (sek['nama'], sek['url'], sek['jenjang'], existing['id']))
+                        logging.info(f"    ↻ Updated: {sek['npsn']} - {sek['nama']}")
+                    else:
+                        cursor.execute("INSERT INTO sekolah_scrape (kecamatan_scrape_id, npsn, nama_sekolah, url, jenjang, status, created_at, updated_at) VALUES (%s, %s, %s, %s, %s, 'active', NOW(), NOW())", (kecamatan_scrape_id, sek['npsn'], sek['nama'], sek['url'], sek['jenjang']))
+                        logging.info(f"    ✓ Inserted: {sek['npsn']} - {sek['nama']}")
+                    conn.commit()
+                    success_count += 1
+                except Exception as e:
+                    logging.error(f"    ✗ Gagal menyimpan {sek['npsn']}: {e}")
+                    failed_count += 1
+                    conn.rollback() 
     except Exception as e:
-        logger.error(f"Fatal error in sekolah import: {e}", exc_info=True)
-        sys.exit(1)
+        logging.error(f"✗ Error besar saat menyimpan sekolah ke DB: {e}")
+        failed_count = len(sekolah_data_batch) - success_count 
     finally:
-        try:
-            if driver:
-                driver.quit()
-                logger.info("Browser closed successfully")
-        except Exception as e:
-            logger.error(f"Error closing browser: {e}")
+        if conn: conn.close()
+    return success_count, failed_count
 
-if __name__ == "__main__":
-    main()
+# ----------------------------------------------------------
+# 4. FUNGSI SCRAPING SEKOLAH (PER JENJANG - Lebih Robust)
+# ----------------------------------------------------------
+def extract_sekolah_from_table(driver, jenjang):
+    """
+    Mengekstrak data sekolah dari tabel yang sedang ditampilkan.
+    Mencoba ID tabel #dataTables dan #DataTables_Table_0.
+    """
+    try:
+        logging.info(f"    Mengekstrak data untuk jenjang: {jenjang}")
+        
+        # Tunggu salah satu elemen tabel atau pesan 'empty' muncul
+        # Ini adalah bagian krusial untuk menunggu AJAX selesai
+        logging.info(f"    Menunggu tabel {jenjang} muncul atau pesan 'empty'...")
+        try:
+            WebDriverWait(driver, TABLE_REFRESH_TIMEOUT).until(
+                EC.any_of(
+                    EC.presence_of_element_located((By.CSS_SELECTOR, "table#dataTables tbody tr")), 
+                    EC.presence_of_element_located((By.CSS_SELECTOR, "table#DataTables_Table_0 tbody tr")), 
+                    EC.presence_of_element_located((By.CSS_SELECTOR, "table#dataTables td.dataTables_empty")),
+                    EC.presence_of_element_located((By.CSS_SELECTOR, "table#DataTables_Table_0 td.dataTables_empty")) 
+                )
+            )
+            logging.info(f"    ✓ Elemen tabel/empty untuk {jenjang} ditemukan.")
+        except TimeoutException:
+             # Jika timeout di sini, kemungkinan besar halaman tidak merespon/error
+             logging.error(f"    ✗ Timeout menunggu tabel/pesan empty untuk jenjang {jenjang} setelah {TABLE_REFRESH_TIMEOUT} detik.")
+             return None # Kembalikan None untuk menandakan kegagalan ekstrak
+
+        # Beri sedikit jeda agar JS selesai merender data sepenuhnya
+        time.sleep(random.uniform(1.5, 3)) 
+
+        soup = BeautifulSoup(driver.page_source, 'html.parser')
+        
+        # Coba cari tabel dengan kedua ID
+        table = soup.find('table', id='dataTables')
+        if not table:
+            table = soup.find('table', id='DataTables_Table_0')
+            
+        if not table: 
+            logging.warning(f"    Tabel (dataTables/DataTables_Table_0) tidak ditemukan setelah menunggu (Jenjang: {jenjang})")
+            return [] # Kembalikan list kosong jika tabel tidak ada
+        
+        # Cek jika tabel eksplisit menyatakan kosong
+        empty_cell = table.find('td', class_='dataTables_empty')
+        if empty_cell:
+            logging.info(f"    Tabel kosong untuk jenjang {jenjang}.")
+            return []
+
+        # Cari semua baris di tbody
+        rows = table.find('tbody').find_all('tr')
+        if not rows:
+            logging.warning(f"    Tabel {jenjang} ditemukan tapi tidak ada baris <tr> di tbody.")
+            return []
+        
+        logging.info(f"    Ditemukan {len(rows)} baris data sekolah untuk jenjang {jenjang}")
+        
+        sekolah_list = []
+        processed_npsn = set() 
+
+        for row in rows:
+            cells = row.find_all('td')
+            # Sesuai HTML baru: No(0), Nama+Link(1), NPSN(2), BP(3), Status(4) ...
+            if len(cells) < 3: 
+                logging.debug("    Baris tidak punya cukup kolom (minimal Nama, NPSN), dilewati.")
+                continue 
+            
+            # Kolom 1: Nama & Link
+            link_cell = cells[1]
+            link = link_cell.find('a', href=True)
+            
+            # Kolom 2: NPSN
+            npsn_cell = cells[2]
+            npsn = npsn_cell.get_text(strip=True) if npsn_cell else None
+            
+            # Validasi dasar
+            if link and npsn and npsn.isdigit() and npsn not in processed_npsn:
+                nama = link.get_text(strip=True)
+                href = link.get('href', '').strip()
+                
+                if href and nama:
+                    full_url = urljoin(BASE_URL, href)
+                    sekolah_list.append({
+                        'npsn': npsn,
+                        'nama': nama,
+                        'url': full_url,
+                        'jenjang': jenjang # Tambahkan info jenjang
+                    })
+                    processed_npsn.add(npsn) 
+            else:
+                 logging.debug(f"    Data baris tidak valid atau duplikat NPSN: {npsn}")
+        
+        logging.info(f"    ✓ Berhasil ekstrak {len(sekolah_list)} sekolah unik untuk jenjang {jenjang}")
+        return sekolah_list # Kembalikan list (bisa kosong) jika ekstraksi berhasil
+        
+    except Exception as e:
+        logging.error(f"    ✗ Gagal ekstrak data jenjang {jenjang}: {e}")
+        import traceback
+        logging.error(traceback.format_exc()) # Log traceback untuk debug
+        return None # Kembalikan None jika ada error tak terduga saat ekstraksi
+
+
+def scrape_sekolah_from_kecamatan(driver, kec_data, max_retries_per_kec=3):
+    """
+    Scrape semua jenjang sekolah (SD, SMP, SMA, SMK) dari satu halaman kecamatan.
+    Lebih tahan banting terhadap error AJAX dan server down.
+    """
+    url = kec_data['url']
+    nama_kecamatan = kec_data['nama_kecamatan']
+    kecamatan_id = kec_data['id']
+    logging.info(f"---> Memulai scraping untuk Kecamatan: {nama_kecamatan} (ID: {kecamatan_id}) <---")
+    
+    sekolah_ditemukan_di_kecamatan = [] 
+    
+    # Retry di level kecamatan jika terjadi error tak terduga
+    for attempt in range(max_retries_per_kec):
+        kecamatan_proses_berhasil_flag = True # Flag penanda sukses per attempt kecamatan
+        try:
+            logging.info(f"  Attempt {attempt + 1}/{max_retries_per_kec} untuk {nama_kecamatan}...")
+            # Selalu buka URL di awal setiap attempt kecamatan
+            driver.get(url) 
+            
+            # 1. Tunggu dropdown jenjang muncul dan bisa diklik
+            logging.info("    Menunggu dropdown jenjang...")
+            try:
+                select_element = WebDriverWait(driver, ELEMENT_TIMEOUT).until(
+                    EC.element_to_be_clickable((By.ID, "selectJenjang"))
+                )
+                logging.info("    ✓ Dropdown jenjang ditemukan.")
+            except TimeoutException:
+                 logging.error(f"    ✗ Timeout menunggu dropdown jenjang di {nama_kecamatan}. Attempt {attempt + 1} gagal.")
+                 # Jika dropdown saja tidak muncul, anggap gagal untuk attempt ini
+                 kecamatan_proses_berhasil_flag = False
+                 continue # Lanjut ke attempt kecamatan berikutnya
+            
+            # Buat objek Select
+            select_obj = Select(select_element)
+            
+            # 2. Iterasi melalui setiap jenjang SPESIFIK
+            for jenjang in JENJANG_SEKOLAH:
+                max_retries_per_jenjang = 3 # Coba 3x per jenjang
+                jenjang_berhasil_diekstrak = False # Flag sukses per jenjang
+                
+                for jenjang_attempt in range(max_retries_per_jenjang):
+                    try:
+                        logging.info(f"    Memproses jenjang: {jenjang} (Attempt {jenjang_attempt + 1}/{max_retries_per_jenjang})")
+                        
+                        # --- Logika Pilih Jenjang dan Tunggu Refresh ---
+                        
+                        # Pastikan dropdown masih ada (jika halaman refresh/error)
+                        try:
+                           current_select_element = WebDriverWait(driver, 5).until(EC.element_to_be_clickable((By.ID, "selectJenjang")))
+                           current_select_obj = Select(current_select_element)
+                        except:
+                             logging.warning(f"    Dropdown hilang saat retry jenjang {jenjang}, coba refresh...")
+                             driver.refresh()
+                             current_select_element = WebDriverWait(driver, ELEMENT_TIMEOUT).until(EC.element_to_be_clickable((By.ID, "selectJenjang")))
+                             current_select_obj = Select(current_select_element)
+                             logging.info("    Dropdown ditemukan setelah refresh.")
+                        
+                        # Pilih jenjang
+                        current_select_obj.select_by_value(jenjang)
+                        logging.info(f"    Jenjang '{jenjang}' dipilih.")
+                        # Beri jeda singkat setelah klik
+                        time.sleep(random.uniform(1, 2)) 
+                             
+                        # --- Ekstraksi Data ---
+                        # Fungsi extract_sekolah_from_table sudah termasuk WebDriverWait di dalamnya
+                        sekolah_data_jenjang = extract_sekolah_from_table(driver, jenjang)
+                        
+                        # Periksa hasil ekstraksi
+                        if sekolah_data_jenjang is None:
+                            # Jika None, berarti ada error saat ekstraksi/menunggu tabel
+                            logging.warning(f"    Ekstraksi gagal (return None) untuk jenjang {jenjang}, attempt {jenjang_attempt + 1}.")
+                            # Jangan break, coba lagi jenjang ini jika masih ada retry
+                            if jenjang_attempt < max_retries_per_jenjang - 1:
+                                logging.info(f"    Mencoba refresh sebelum retry jenjang {jenjang}...")
+                                driver.refresh()
+                                # Tunggu dropdown lagi setelah refresh
+                                WebDriverWait(driver, ELEMENT_TIMEOUT).until(EC.element_to_be_clickable((By.ID, "selectJenjang")))
+                                time.sleep(random.uniform(2, 4)) # Jeda setelah refresh
+                            continue # Lanjut ke attempt jenjang berikutnya
+                        else:
+                            # Jika list (meski kosong), ekstraksi berhasil
+                            sekolah_ditemukan_di_kecamatan.extend(sekolah_data_jenjang)
+                            jenjang_berhasil_diekstrak = True
+                            break # Berhasil untuk jenjang ini, keluar dari loop retry jenjang
+                            
+                    except StaleElementReferenceException:
+                        logging.warning(f"    StaleElement saat memproses jenjang {jenjang}. Retry jenjang...")
+                        # Tidak perlu refresh manual, loop retry akan re-find element
+                        if jenjang_attempt < max_retries_per_jenjang - 1:
+                           time.sleep(3) 
+                        continue 
+                           
+                    except TimeoutException as te:
+                         logging.warning(f"    Timeout ({type(te).__name__}) saat proses jenjang {jenjang}. Retry jenjang...")
+                         # Timeout bisa terjadi saat re-find dropdown atau saat memilih
+                         if jenjang_attempt < max_retries_per_jenjang - 1:
+                             logging.info(f"    Mencoba refresh sebelum retry jenjang {jenjang}...")
+                             driver.refresh()
+                             WebDriverWait(driver, ELEMENT_TIMEOUT).until(EC.element_to_be_clickable((By.ID, "selectJenjang")))
+                             time.sleep(random.uniform(2, 4))
+                         continue # Lanjut ke attempt jenjang berikutnya
+                         
+                    except Exception as e_jenjang:
+                        logging.error(f"    ✗ Error tak terduga pada jenjang {jenjang} (Attempt {jenjang_attempt + 1}): {e_jenjang}")
+                        import traceback
+                        logging.error(traceback.format_exc())
+                        if jenjang_attempt < max_retries_per_jenjang - 1:
+                           logging.info(f"    Mencoba refresh sebelum retry jenjang {jenjang}...")
+                           try:
+                               driver.refresh()
+                               WebDriverWait(driver, ELEMENT_TIMEOUT).until(EC.element_to_be_clickable((By.ID, "selectJenjang")))
+                               time.sleep(random.uniform(2, 4))
+                           except Exception as refresh_err:
+                                logging.error(f"    Gagal refresh/menemukan dropdown setelah error: {refresh_err}. Gagal total untuk kecamatan ini.")
+                                kecamatan_proses_berhasil_flag = False
+                                break # Keluar dari loop jenjang_attempt
+                           continue 
+                        else:
+                            logging.error(f"    Gagal total untuk jenjang {jenjang} setelah {max_retries_per_jenjang} attempts.")
+                            # Tidak set flag gagal kecamatan, hanya gagal jenjang ini
+                            break # Keluar dari loop jenjang_attempt
+
+                # Jika keluar dari loop retry jenjang dan flag 'kecamatan_proses_berhasil_flag' jadi False
+                if not kecamatan_proses_berhasil_flag:
+                    break # Keluar juga dari loop JENJANG_SEKOLAH utama
+                
+                # Jika jenjang tidak berhasil diekstrak setelah semua retry
+                if not jenjang_berhasil_diekstrak:
+                     logging.error(f"    Gagal memproses jenjang {jenjang} setelah {max_retries_per_jenjang} attempts. Lanjut ke jenjang berikutnya.")
+                     # Tidak set flag gagal kecamatan, hanya catat error
+
+            # Setelah loop semua jenjang selesai...
+            # Jika flag 'kecamatan_proses_berhasil_flag' masih True, berarti attempt kecamatan ini sukses
+            if kecamatan_proses_berhasil_flag:
+                logging.info(f"---> Selesai scraping {nama_kecamatan} (Attempt {attempt+1}), total ditemukan {len(sekolah_ditemukan_di_kecamatan)} sekolah <---")
+                return sekolah_ditemukan_di_kecamatan # SUKSES untuk kecamatan ini
+            else:
+                 # Jika ada error fatal di tengah loop jenjang
+                 raise Exception(f"Proses gagal di tengah jalan (flag=False) untuk kecamatan {nama_kecamatan}.")
+
+        except Exception as e_kec:
+            # Tangkap error level kecamatan (misal: gagal load halaman awal, gagal total temukan dropdown)
+            logging.warning(f"⚠ Error pada attempt {attempt + 1} kecamatan {nama_kecamatan}: {e_kec}")
+            kecamatan_proses_berhasil_flag = False # Tandai attempt ini gagal
+            
+        # Jika loop attempt kecamatan sampai sini DAN flag masih false, retry kecamatan
+        if not kecamatan_proses_berhasil_flag and attempt < max_retries_per_kec - 1:
+            logging.info(f"    Retry kecamatan {nama_kecamatan}...")
+            time.sleep(random.uniform(7, 12)) # Jeda lebih lama sebelum retry kecamatan
+        elif not kecamatan_proses_berhasil_flag:
+             logging.error(f"✗ Gagal total scraping {nama_kecamatan} setelah {max_retries_per_kec} attempts")
+             return None # GAGAL TOTAL untuk kecamatan ini
+
+    return None # Fallback jika loop attempt selesai tanpa return sukses
+
+# ----------------------------------------------------------
+# 5. PROSES UTAMA (BATCH LOOP KECAMATAN)
+# ----------------------------------------------------------
+driver = None
+total_kec_to_process = 0
+total_kec_success = 0
+total_kec_failed = 0
+total_sek_saved_overall = 0 
+error_message_summary = "" 
+
+try:
+    # 1. Ambil daftar kecamatan untuk diproses
+    kecamatan_list = get_kecamatan_to_process(args.kecamatan_id)
+    total_kec_to_process = len(kecamatan_list)
+    if total_kec_to_process == 0:
+        raise Exception(f"Tidak ada kecamatan aktif ditemukan untuk IDs: {args.kecamatan_id}")
+    
+    # 2. Update log_id dengan total yg akan diproses
+    db_helper.finish_log_entry(log_id, 'running', total_kec_to_process, 0, 0, None)
+    
+    # 3. Setup Driver (Hanya 1x di awal)
+    driver = driver_helper.setup_driver(driver_path=args.driver_path)
+    if not driver:
+        raise Exception("Gagal menginisialisasi Selenium Driver")
+
+    # 4. Looping setiap kecamatan
+    for index, kec_data in enumerate(kecamatan_list):
+        sekolah_list_all_jenjang = None 
+        kec_success_flag = False 
+        
+        logging.info(f"\n===== Memproses Kecamatan {index + 1}/{total_kec_to_process}: {kec_data['nama_kecamatan']} =====")
+        
+        try:
+            # 5. Scrape semua jenjang untuk kecamatan ini
+            sekolah_list_all_jenjang = scrape_sekolah_from_kecamatan(driver, kec_data, args.max_retries)
+            
+            # Periksa hasil scraping
+            if sekolah_list_all_jenjang is None:
+                raise Exception(f"Gagal total scrape sekolah") # Error sudah dilog di dalam fungsi
+                
+            elif not sekolah_list_all_jenjang:
+                 logging.info(f"==> Tidak ada sekolah ditemukan (scrape sukses).")
+                 kec_success_flag = True 
+                 
+            else:
+                logging.info(f"==> Ditemukan {len(sekolah_list_all_jenjang)} sekolah. Menyimpan ke DB...")
+                # 6. Simpan batch sekolah ke DB
+                success_count, fail_count = save_sekolah_to_db(
+                    sekolah_list_all_jenjang, 
+                    kec_data['id']
+                )
+                
+                total_sek_saved_overall += success_count
+                
+                if fail_count > 0:
+                     logging.warning(f"    Gagal menyimpan {fail_count} sekolah.")
+                     kec_success_flag = True # Anggap sukses scrape, tapi catat error
+                     error_message_summary += f"Gagal simpan {fail_count} di {kec_data['nama_kecamatan'][:20]}.. . " # Potong nama
+                else:
+                    kec_success_flag = True # Sukses penuh
+            
+        except Exception as e:
+            logging.error(f"✗ Gagal total memproses kecamatan {kec_data['nama_kecamatan']}: {e}")
+            kec_success_flag = False 
+            error_message_summary += f"Gagal proses {kec_data['nama_kecamatan'][:20]}..: {str(e)[:50]}... . " # Potong pesan error juga
+            
+        # Update counter sukses/gagal berdasarkan flag
+        if kec_success_flag:
+            total_kec_success += 1
+        else:
+            total_kec_failed += 1
+            
+        # 7. Update log progres SETELAH SETIAP kecamatan
+        db_helper.finish_log_entry(
+            log_id=log_id,
+            status='running', # Status tetap running selama loop
+            total_processed=total_kec_to_process,
+            total_success=total_kec_success, 
+            total_failed=total_kec_failed,   
+            error_message=error_message_summary.strip() if error_message_summary else None 
+        )
+        
+        # Jeda antar kecamatan
+        logging.info(f"----- Jeda sebelum kecamatan berikutnya -----")
+        time.sleep(random.uniform(3, 6)) 
+
+    # 8. Selesai (Setelah loop semua kecamatan)
+    final_status = 'completed' if total_kec_failed == 0 else 'failed'
+    final_error_message = None
+    if total_kec_failed > 0:
+        final_error_message = f"{total_kec_failed}/{total_kec_to_process} kecamatan gagal."
+        if error_message_summary: final_error_message += f" Detail: {error_message_summary.strip()}"
+    elif error_message_summary: 
+         final_error_message = f"Peringatan Simpan: {error_message_summary.strip()}"
+         final_status = 'completed' 
+
+    db_helper.finish_log_entry(
+        log_id=log_id,
+        status=final_status,
+        total_processed=total_kec_to_process,
+        total_success=total_kec_success,
+        total_failed=total_kec_failed,
+        error_message=final_error_message 
+    )
+    
+    logging.info("=" * 80)
+    logging.info("PROSES SEKOLAH SELESAI")
+    logging.info(f"Total Kecamatan Diproses: {total_kec_to_process}")
+    logging.info(f"Kecamatan Sukses: {total_kec_success}")
+    logging.info(f"Kecamatan Gagal: {total_kec_failed}")
+    logging.info(f"Total Sekolah Disimpan/Update: {total_sek_saved_overall}") 
+    logging.info("=" * 80)
+    
+except Exception as e:
+    logging.error(f"✗✗✗ ERROR FATAL (Level Utama): {e}")
+    import traceback
+    logging.error(traceback.format_exc())
+    # Catat error fatal di log
+    db_helper.finish_log_entry(
+        log_id=log_id,
+        status='failed',
+        total_processed=total_kec_to_process, 
+        total_success=total_kec_success,
+        total_failed=total_kec_to_process - total_kec_success, 
+        error_message=f"FATAL ERROR: {str(e)}"
+    )
+    sys.exit(1) # Keluar dengan status error
+
+finally:
+    # Selalu tutup driver jika sudah dibuat
+    if driver:
+        try:
+            driver.quit()
+            logging.info("✓ Driver Selenium ditutup")
+        except Exception as quit_err:
+             logging.error(f"Error saat menutup driver: {quit_err}")
+    
+    logging.info(">>> Script sekolah selesai <<<")
